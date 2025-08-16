@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import CustomUser, UserProfile
+from .models import Certificate, CustomUser, UserProfile
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -23,10 +23,18 @@ class UserProfileSerializer(serializers.ModelSerializer):
         fields = ["bio", "avatar", "website", "location", "birth_date"]
         read_only_fields = ["created_at", "updated_at"]
 
+class CertificateSerializer(serializers.ModelSerializer):
+    course_title = serializers.CharField(source="course.title", read_only=True)
+    instructor_name = serializers.CharField(source="course.instructor.get_full_name", read_only=True)
+
+    class Meta:
+        model = Certificate
+        fields = ["id", "course", "course_title", "instructor_name", "issued_at", "certificate_url", "description"]
+
 
 class UserDetailSerializer(serializers.ModelSerializer):
     profile = UserProfileSerializer()
-    # certificates = CertificateSerializer(many=True, read_only=True)
+    certificates = CertificateSerializer(many=True, read_only=True)
 
     class Meta:
         model = CustomUser
