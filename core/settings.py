@@ -41,6 +41,7 @@ THIRD_PARTY_APPS = [
 
 LOCAL_APPS = [
     "apps.accounts.apps.AccountsConfig",
+    "apps.courses.apps.CoursesConfig",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -119,7 +120,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 # Custom User Model
-AUTH_USER_MODEL = "apps.accounts.CustomUser"
+AUTH_USER_MODEL = "accounts.CustomUser"
 
 
 # Internationalization
