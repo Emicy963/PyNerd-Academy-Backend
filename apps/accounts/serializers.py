@@ -22,3 +22,21 @@ class UserProfileSerializer(serializers.ModelSerializer):
         read_only_fields = [
             "created_at", "updated_at"
         ]
+
+class UserDetailSerializer(serializers.ModelSerializer):
+    profile = UserProfileSerializer()
+    #certificates = CertificateSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = CustomUser
+        fields = ['id', 'email', 'first_name', 'last_name', 'role', 'is_approved', 'created_at', 'profile', 'certificates']
+
+    def update(self, instance, validated_data):
+        profile_data = validated_data.pop('profile', {})
+        profile = instance.profile
+        
+        for attr, value in profile_data.items():
+            setattr(profile, attr, value)
+        profile.save()
+
+        return super().update(instance, validated_data)
