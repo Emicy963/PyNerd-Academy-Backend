@@ -1,8 +1,9 @@
-from rest_framework import generics, status
+from rest_framework import generics, status, viewsets
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from .models import CustomUser, UserProfile
-from .serializers import UserSerializer
+from .serializers import UserDetailSerializer, UserSerializer
+from .permissions import IsSelfOrAdmin
 
 
 class RegisterView(generics.CreateAPIView):
@@ -30,3 +31,17 @@ class RegisterView(generics.CreateAPIView):
         UserProfile.objects.create(user=user)
 
         return Response(UserSerializer(user).data, status=status.HHTP_201_CREATED)
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = CustomUser.objects.all()
+    serializer_class = UserDetailSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action == "create":
+            permission_classes = [AllowAny]
+        elif self.action in ["update", "partial_update"]:
+            permission_classes = [IsAuthenticated, IsSelfOrAdmin]
+        else:
+            permission_classes = [IsAuthenticated]
+        return [permission() for permission in permission_classes]
