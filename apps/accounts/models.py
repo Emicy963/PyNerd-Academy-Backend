@@ -60,3 +60,17 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return f"{self.user.email} - Profile"
+
+class Certificate(models.Model):
+    student = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="certificates")
+    #course = models.ForeignKey("courses.Course", on_delete=models.CASCADE)
+    issued_at = models.DateTimeField(auto_now_add=True)
+    certificate_urls = models.URLField()
+    description = models.TextField()
+
+    class Meta:
+        unique_together = ("student", "course")
+    
+    def __str__(self):
+        return f"Certificate for {self.student.email}"
+        # return f"Certificate for {self.student.email} - {self.course.title}"
