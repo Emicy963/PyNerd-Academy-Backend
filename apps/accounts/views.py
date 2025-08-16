@@ -1,5 +1,6 @@
 from rest_framework import generics, status, viewsets
 from rest_framework.response import Response
+from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from .models import CustomUser, UserProfile
 from .serializers import UserDetailSerializer, UserSerializer
@@ -45,3 +46,16 @@ class UserViewSet(viewsets.ModelViewSet):
         else:
             permission_classes = [IsAuthenticated]
         return [permission() for permission in permission_classes]
+    
+    @action(detail=True, methods=["get"], permission_classes=[IsAuthenticated])
+    def profile(self, request, pk=None):
+        user = self.get_object()
+        if request.user != user and not request.user.is_superuser:
+            return Response(
+                {
+                    "detail": "Not authorized."
+                },
+                status=status.HTTP_403_FORBIDDEN
+            )
+        serializer = UserDetailSerializer(user)
+        return Response(serializer.data)
