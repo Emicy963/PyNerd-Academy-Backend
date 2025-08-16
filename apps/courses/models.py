@@ -49,3 +49,20 @@ class Lesson(PolymorphicModel):
     
     def __str__(self):
         return self.title
+
+class Enrollment(models.Model):
+    student = models.ForeignKey(
+        "accounts.CustomUser",
+        limit_choices_to={"role": "STUDENT"},
+        on_delete=models.CASCADE,
+        related_name="enrollments"
+    )
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="enrollments")
+    enrolled_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ("student", "course")
+    
+    def __str__(self):
+        return f"{self.student.email} enrolled in {self.course.title}"
