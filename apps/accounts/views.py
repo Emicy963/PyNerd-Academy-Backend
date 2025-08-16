@@ -19,19 +19,20 @@ class RegisterView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
 
         role = serializer.validated_data.get("role")
-        is_approved = role != "INSTRUCTOR" # Instructors need approval
+        is_approved = role != "INSTRUCTOR"  # Instructors need approval
 
         user = CustomUser.objects.create_user(
             email=serializer.validated_data["email"],
             password=serializer.validated_data["password"],
             role=role,
-            is_approved=is_approved
+            is_approved=is_approved,
         )
 
         # Create profile
         UserProfile.objects.create(user=user)
 
         return Response(UserSerializer(user).data, status=status.HHTP_201_CREATED)
+
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = CustomUser.objects.all()
@@ -46,16 +47,13 @@ class UserViewSet(viewsets.ModelViewSet):
         else:
             permission_classes = [IsAuthenticated]
         return [permission() for permission in permission_classes]
-    
+
     @action(detail=True, methods=["get"], permission_classes=[IsAuthenticated])
     def profile(self, request, pk=None):
         user = self.get_object()
         if request.user != user and not request.user.is_superuser:
             return Response(
-                {
-                    "detail": "Not authorized."
-                },
-                status=status.HTTP_403_FORBIDDEN
+                {"detail": "Not authorized."}, status=status.HTTP_403_FORBIDDEN
             )
         serializer = UserDetailSerializer(user)
         return Response(serializer.data)

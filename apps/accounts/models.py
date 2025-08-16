@@ -1,6 +1,11 @@
 from django.db import models
-from django.contrib.auth.models import BaseUserManager, AbstractBaseUser, PermissionsMixin
+from django.contrib.auth.models import (
+    BaseUserManager,
+    AbstractBaseUser,
+    PermissionsMixin,
+)
 from django.core.exceptions import ValidationError
+
 
 class CustomUserManager(BaseUserManager):
     """Model for Manager Custom User"""
@@ -13,12 +18,13 @@ class CustomUserManager(BaseUserManager):
         user.set_password(password)
         user.save(using=self._db)
         return user
-    
+
     def create_superuser(self, email, password, **extra_fields):
         extra_fields.setdefault("role", "ADMIN")
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         return self.create_user(email, password, **extra_fields)
+
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     ROLE_CHOICES = (
@@ -44,12 +50,15 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     def clean(self):
         if self.role == "INSTRUCTOR" and not self.is_approved:
             raise ValidationError("Instructors must be approved before activation.")
-    
+
     def __str__(self):
         return self.email
 
+
 class UserProfile(models.Model):
-    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="profile")
+    user = models.OneToOneField(
+        CustomUser, on_delete=models.CASCADE, related_name="profile"
+    )
     bio = models.TextField(blank=True)
     avatar = models.URLField(blank=True)
     website = models.URLField(blank=True)
@@ -61,16 +70,19 @@ class UserProfile(models.Model):
     def __str__(self):
         return f"{self.user.email} - Profile"
 
+
 class Certificate(models.Model):
-    student = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name="certificates")
-    #course = models.ForeignKey("courses.Course", on_delete=models.CASCADE)
+    student = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, related_name="certificates"
+    )
+    # course = models.ForeignKey("courses.Course", on_delete=models.CASCADE)
     issued_at = models.DateTimeField(auto_now_add=True)
     certificate_urls = models.URLField()
     description = models.TextField()
 
     class Meta:
         unique_together = ("student", "course")
-    
+
     def __str__(self):
         return f"Certificate for {self.student.email}"
         # return f"Certificate for {self.student.email} - {self.course.title}"
