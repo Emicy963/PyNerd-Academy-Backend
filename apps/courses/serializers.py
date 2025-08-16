@@ -33,3 +33,8 @@ class ProgressSerializer(serializers.ModelSerializer):
         model = Progress
         fields = ["id", "student", "lesson", "is_completed", "completed_at"]
         read_only_fields = ["student"]
+
+class StudentProgressSerializer(serializers.Serializer):
+    course_id = serializers.IntegerField()
+    completed_lessons = serializers.IntegerField()
+    total_lessons = serializers.IntegerField()
