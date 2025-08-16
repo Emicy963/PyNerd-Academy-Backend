@@ -66,3 +66,23 @@ class Enrollment(models.Model):
     
     def __str__(self):
         return f"{self.student.email} enrolled in {self.course.title}"
+
+class Progress(models.Model):
+    student = models.ForeignKey("accounts.CustomUser", on_delete=models.CASCADE, related_name="progress")
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
+    is_completed = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(null=True, blank=True, auto_now_add=True)
+
+    class Meta:
+        unique_together = ("student", "lesson")
+    
+    def clean(self):
+        if not Enrollment.objects.filter(student=self.student, course=self.lesson.module.course).exists():
+            raise ValidationError("Student must be enrolled in the course to track progress.")
+    
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return f"{self.student.email} - {self.lesson.title}"
