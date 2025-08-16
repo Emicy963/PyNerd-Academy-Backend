@@ -20,3 +20,14 @@ class Course(models.Model):
     
     def __str__(self):
         return self.title
+
+class Module(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="modules")
+    title = models.CharField(max_length=200)
+    order = models.PositiveIntegerField()
+
+    class Meta:
+        unique_together = ("course", "order")
+    
+    def __str__(self):
+        return f"{self.course.title} - {self.title}"
