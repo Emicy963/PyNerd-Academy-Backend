@@ -8,6 +8,9 @@ router.register(r"progress", ProgressViewSet, basename="progress")
 
 urlpatterns = [
     path("", include(router.urls)),
-    path("students/<int:id>/progress/", StudentProgressView.as_view(), name="student-progress"),
+    path(
+        "students/<int:id>/progress/",
+        StudentProgressView.as_view(),
+        name="student-progress",
+    ),
 ]
-
