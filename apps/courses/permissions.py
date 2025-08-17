@@ -17,9 +17,9 @@ class IsCourseStudent(BasePermission):
     """
 
     def has_object_permission(self, request, view, obj):
-        if hasattr(obj, 'course'):
+        if hasattr(obj, "course"):
             course = obj.course
-        elif hasattr(obj, 'module') and hasattr(obj.module, 'course'):
+        elif hasattr(obj, "module") and hasattr(obj.module, "course"):
             course = obj.module.course
         else:
             return False

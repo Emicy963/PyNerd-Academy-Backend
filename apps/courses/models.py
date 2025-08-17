@@ -47,6 +47,7 @@ class Lesson(PolymorphicModel):
     def clean(self):
         try:
             from urllib.parse import urlparse
+
             parsed = urlparse(self.video_url)
             domain = parsed.netloc.lower()
             if domain not in self.ALLOWED_DOMAINS:
