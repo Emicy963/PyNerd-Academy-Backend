@@ -1,8 +1,9 @@
-from rest_framework import pagination, viewsets, status
+from django.db.models import Count
+from rest_framework import pagination, viewsets, status, generics
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .models import Course, Enrollment, Progress
+from .models import Course, Enrollment, Progress, Lesson
 from .permissions import IsInstructor
 from .serializers import CourseSerializer, EnrollmentSerializer, ProgressSerializer
 
@@ -91,3 +92,52 @@ class ProgressViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN
             )
         return super().update(request, *args, **kwargs)
+
+class StudentProgressView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def retrieve(self, request, *args, **kwargs):
+        student_id = self.kwargs["id"]
+        if request.user.id != int(student_id) and not request.user.is_superuser:
+            return Response(
+                {
+                    "detail": "Not authorized."
+                },
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        progress_data = (
+            Progress.objects.filter(student_id=student_id, is_completed=True)
+            .select_related("lesson__module__course")
+            .values("lesson__module__course")
+            .annotate(completed=Count("id"))
+        )
+
+        total_data = (
+            Lesson.objects.filter(module__course__enrollments__student_id=student_id)
+            .values("module__course")
+            .annotate(total=Count("id"))
+        )
+
+        course_progress = {}
+        for item in progress_data:
+            course_id = item["lesson__module__course"]
+            course_progress[course_id] = {"completed": item["completed"]}
+        
+        for item in total_data:
+            course_id = item["module__course"]
+            if course_id in course_progress:
+                course_progress[course_id]["total"] = item["total"]
+            else:
+                course_progress[course_id] = {"completed": 0, "total": item["total"]}
+        
+        result = [
+            {
+                "course_id": course_id,
+                "completed_lessons": data["completed"],
+                "total_lessons": data["total"]
+            }
+            for course_id, data in course_progress.items()
+        ]
+
+        return Response(result)
