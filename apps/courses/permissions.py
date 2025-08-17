@@ -17,8 +17,13 @@ class IsCourseStudent(BasePermission):
     """
 
     def has_object_permission(self, request, view, obj):
-        # obj is expected to be a Lesson or reated to a Course
-        course = getattr(obj, "course", None) or getattr(obj, "module", None).course
+        if hasattr(obj, 'course'):
+            course = obj.course
+        elif hasattr(obj, 'module') and hasattr(obj.module, 'course'):
+            course = obj.module.course
+        else:
+            return False
+
         return (
             request.user.role == "STUDENT"
             and Enrollment.objects.filter(student=request.user, course=course).exists()
