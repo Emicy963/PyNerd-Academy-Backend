@@ -1,3 +1,5 @@
-from django.shortcuts import render
+from rest_framework import pagination
 
-# Create your views here.
+class StandardResultSetPagination(pagination.LimitOffsetPagination):
+    default_limit = 20
+    max_limit = 50
