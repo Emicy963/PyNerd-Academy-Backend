@@ -22,3 +22,9 @@ class CourseViewSet(viewsets.ModelViewSet):
         else:
             permission_classes = [IsAuthenticated]
         return [permission() for permission in permission_classes]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_authenticated and user.role == "INSTRUCTOR":
+            return Course.objects.filter(instructor=user)
+        return Course.objects.filter(is_published=True)
