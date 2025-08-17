@@ -45,9 +45,14 @@ class Lesson(PolymorphicModel):
     ALLOWED_DOMAINS = ["youtube.com", "vimeo.com"]
 
     def clean(self):
-        domain = self.video_url.split("/")[2].lower()
-        if domain not in self.ALLOWED_DOMAINS:
-            raise ValidationError("Video URL must be from allowed domains.")
+        try:
+            from urllib.parse import urlparse
+            parsed = urlparse(self.video_url)
+            domain = parsed.netloc.lower()
+            if domain not in self.ALLOWED_DOMAINS:
+                raise ValidationError("Video URL must be from allowed domains.")
+        except Exception:
+            raise ValidationError("Invalid URL format.")
 
     def __str__(self):
         return self.title
