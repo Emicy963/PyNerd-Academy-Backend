@@ -2,9 +2,9 @@ from rest_framework import pagination, viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .models import Course, Enrollment
+from .models import Course, Enrollment, Progress
 from .permissions import IsInstructor
-from .serializers import CourseSerializer, EnrollmentSerializer
+from .serializers import CourseSerializer, EnrollmentSerializer, ProgressSerializer
 
 class StandardResultSetPagination(pagination.LimitOffsetPagination):
     default_limit = 20
@@ -67,4 +67,27 @@ class CourseViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         return Response(EnrollmentSerializer(enrollment).data, status=status.HTTP_201_CREATED)
-        
+    
+class ProgressViewSet(viewsets.ModelViewSet):
+    queryset = Progress.objects.all()
+    serializer_class = ProgressSerializer
+    permission_classes = [IsAuthenticated]
+    http_method_names = ["patch"]
+
+    def get_queryset(self):
+        if self.request.user.role == "STUDENT":
+            return Progress.objects.filter(student=self.request.user)
+        return Progress.objects.none()
+    
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        lesson = instance.lesson
+        course = lesson.module.course
+        if not Enrollment.objects.filter(student=request.user, course=course).exists():
+            return Response(
+                {
+                    "detail": "Not enrolled in this course."
+                },
+                status=status.HTTP_403_FORBIDDEN
+            )
+        return super().update(request, *args, **kwargs)
