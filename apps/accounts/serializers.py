@@ -1,6 +1,29 @@
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import Certificate, CustomUser, UserProfile
 
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token["role"] = user.role
+        return token
+
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        data.update({
+            "user": {
+                "id": self.user.id,
+                'name': f"{self.user.first_name} {self.user.last_name}",
+                'email': self.user.email,
+                'avatar': self.user.avatar,
+                'plan': self.user.plan,
+                'studyStreak': self.user.study_streak,
+                'totalStudyTime': self.user.total_study_time,
+            }
+        })
+        return data
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
