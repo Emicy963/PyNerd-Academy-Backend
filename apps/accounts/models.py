@@ -33,16 +33,39 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         ("ADMIN", "Admin"),
     )
 
+    PLAN_CHOICES = (
+        ('free', 'Free'),
+        ('premium', 'Premium'),
+        ('enterprise', 'Enterprise')
+    )
+
     email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=30, blank=True)
     last_name = models.CharField(max_length=30, blank=True)
     role = models.CharField(max_length=10, choices=ROLE_CHOICES)
+    avatar = models.URLField(blank=True)
+    plan = models.CharField(max_length=20, choices=PLAN_CHOICES, default="free")
+    study_streak = models.PositiveIntegerField(default=0)
+    total_study_time = models.PositiveIntegerField(default=0) # in seconds
     is_approved = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    # Preference in JSON
+    preferences = models.JSONField(default=dict, blank=True)
+
     objects = CustomUserManager()
+
+    # @property
+    # def stats(self):
+    #     """Calcula estatísticas do usuário"""
+    #     return {
+    #         'coursesCompleted': self.enrollments.filter(completed_at__isnull=False).count(),
+    #         'lessonsCompleted': self.progress.filter(is_completed=True).count(),
+    #         'averageScore': self.calculate_average_score(),
+    #         # ... outros stats
+    #     }
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["role"]
