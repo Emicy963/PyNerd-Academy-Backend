@@ -13,8 +13,35 @@ class Course(models.Model):
         on_delete=models.CASCADE,
         related_name="courses",
     )
+    slug = models.SlugField(unique=True)
+    thumbnail = models.URLField(blank=True)
+    full_description = models.TextField(blank=True)
+    level = models.CharField(max_length=20, choices=[
+        ('beginner', 'Beginner'),
+        ('intermediate', 'Intermediate'),
+        ('advanced', 'Advanced')
+    ])
+    category = models.CharField(max_length=50)
+    duration = models.PositiveIntegerField(help_text="Duration in minutes")
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     is_published = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    # Campos calculados
+    @property
+    def rating(self):
+        # Calcular rating médio das avaliações
+        pass
+    
+    @property
+    def students_count(self):
+        return self.enrollments.count()
+    
+    # def save(self, *args, **kwargs):
+    #     if not self.slug:
+    #         self.slug = slugify(self.title)
+    #     super().save(*args, **kwargs)
+
 
     def clean(self):
         if self.instructor.role != "INSTRUCTOR":
