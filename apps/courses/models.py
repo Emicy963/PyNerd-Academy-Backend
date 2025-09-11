@@ -131,3 +131,8 @@ class Progress(models.Model):
 
     def __str__(self):
         return f"{self.student.email} - {self.lesson.title}"
+
+class Quiz(models.Model):
+    lesson = models.OneToOneField(Lesson, on_delete=models.CASCADE, related_name='quiz')
+    time_limit = models.PositiveIntegerField(help_text="Time limit in seconds")
+    passing_score = models.PositiveIntegerField(default=70)
