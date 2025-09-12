@@ -136,3 +136,13 @@ class Quiz(models.Model):
     lesson = models.OneToOneField(Lesson, on_delete=models.CASCADE, related_name='quiz')
     time_limit = models.PositiveIntegerField(help_text="Time limit in seconds")
     passing_score = models.PositiveIntegerField(default=70)
+
+class Question(models.Model):
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='questions')
+    question = models.TextField()
+    type = models.CharField(max_length=20, choices=[
+        ('multiple_choice', 'Multiple Choice'),
+        ('true_false', 'True/False'),
+        ('essay', 'Essay')
+    ])
+    points = models.PositiveIntegerField(default=1)
