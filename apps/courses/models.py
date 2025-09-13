@@ -146,3 +146,8 @@ class Question(models.Model):
         ('essay', 'Essay')
     ])
     points = models.PositiveIntegerField(default=1)
+
+class Option(models.Model):
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='options')
+    text = models.TextField()
+    is_correct = models.BooleanField(default=False)
