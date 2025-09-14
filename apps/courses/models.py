@@ -151,3 +151,13 @@ class Option(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='options')
     text = models.TextField()
     is_correct = models.BooleanField(default=False)
+
+class Note(models.Model):
+    student = models.ForeignKey(
+        "accounts.CustomUser", 
+        on_delete=models.CASCADE, 
+        related_name='notes')
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='notes')
+    content = models.TextField()
+    timestamp = models.PositiveIntegerField(help_text="Position in video (seconds)")
+    created_at = models.DateTimeField(auto_now_add=True)
