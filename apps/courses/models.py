@@ -172,3 +172,14 @@ class Resource(models.Model):
     ])
     file_url = models.URLField()
     size = models.PositiveIntegerField(help_text="File size in bytes")
+
+class Bookmark(models.Model):
+    student = models.ForeignKey(
+        "accounts.CustomUser", 
+        on_delete=models.CASCADE, 
+        related_name='bookmarks')
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='bookmarks')
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ('student', 'lesson')
