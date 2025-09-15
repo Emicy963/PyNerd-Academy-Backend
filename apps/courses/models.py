@@ -161,3 +161,14 @@ class Note(models.Model):
     content = models.TextField()
     timestamp = models.PositiveIntegerField(help_text="Position in video (seconds)")
     created_at = models.DateTimeField(auto_now_add=True)
+
+class Resource(models.Model):
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='resources')
+    title = models.CharField(max_length=200)
+    type = models.CharField(max_length=20, choices=[
+        ('pdf', 'PDF'),
+        ('zip', 'ZIP'),
+        ('link', 'Link')
+    ])
+    file_url = models.URLField()
+    size = models.PositiveIntegerField(help_text="File size in bytes")
