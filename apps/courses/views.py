@@ -3,6 +3,7 @@ from rest_framework import pagination, viewsets, status, generics
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 from .models import Course, Enrollment, Progress, Lesson
 from .permissions import IsInstructor
 from .serializers import CourseSerializer, EnrollmentSerializer, ProgressSerializer
@@ -30,9 +31,10 @@ class CourseViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        queryset = Course.objects.select_related("instructor").prefetch_related("modules__lessons")
         if user.is_authenticated and user.role == "INSTRUCTOR":
-            return Course.objects.filter(instructor=user)
-        return Course.objects.filter(is_published=True)
+            return queryset.filter(instructor=user)
+        return queryset.filter(is_published=True)
 
     def perform_create(self, serializer):
         serializer.save(instructor=self.request.user)
@@ -46,6 +48,7 @@ class CourseViewSet(viewsets.ModelViewSet):
             )
         return super().update(request, *args, **kwargs)
 
+    @extend_schema(request=None, responses={201: EnrollmentSerializer})
     @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
     def enroll(self, request, pk=None):
         course = self.get_object()

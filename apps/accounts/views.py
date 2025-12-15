@@ -2,8 +2,20 @@ from rest_framework import generics, status, viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from social_django.utils import psa
+from django.core.mail import send_mail
+from django.conf import settings
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from drf_social_oauth2.views import ConvertTokenView
 from .models import CustomUser, UserProfile
-from .serializers import UserDetailSerializer, UserSerializer
+from .serializers import (
+    UserDetailSerializer,
+    UserSerializer,
+    ChangePasswordSerializer,
+    SocialLoginSerializer,
+)
 from .permissions import IsSelfOrAdmin
 
 
@@ -26,12 +38,45 @@ class RegisterView(generics.CreateAPIView):
             password=serializer.validated_data["password"],
             role=role,
             is_approved=is_approved,
+            is_active=False
         )
 
         # Create profile
         UserProfile.objects.create(user=user)
 
-        return Response(UserSerializer(user).data, status=status.HHTP_201_CREATED)
+        # Send Activation Email
+        token = default_token_generator.make_token(user)
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        activation_link = f"http://localhost:8000/api/auth/activate/{uid}/{token}/"
+        
+        send_mail(
+            subject="Activate your PyNerd Account",
+            message=f"Please click the link to activate: {activation_link}",
+            from_email=settings.EMAIL_HOST_USER,
+            recipient_list=[user.email],
+            fail_silently=False,
+        )
+
+        return Response({"detail": "User created. Please check email for activation."}, status=status.HTTP_201_CREATED)
+
+
+class ActivateAccountView(generics.GenericAPIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, uidb64, token):
+        try:
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = CustomUser.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, CustomUser.DoesNotExist):
+            user = None
+
+        if user is not None and default_token_generator.check_token(user, token):
+            user.is_active = True
+            user.save()
+            return Response({"detail": "Account activated successfully."}, status=status.HTTP_200_OK)
+        else:
+            return Response({"detail": "Invalid activation link."}, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -57,3 +102,35 @@ class UserViewSet(viewsets.ModelViewSet):
             )
         serializer = UserDetailSerializer(user)
         return Response(serializer.data)
+
+    @action(detail=False, methods=["post"], permission_classes=[IsAuthenticated])
+    def change_password(self, request):
+        serializer = ChangePasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            user = request.user
+            if not user.check_password(serializer.data.get("old_password")):
+                return Response(
+                    {"old_password": ["Wrong password."]},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            user.set_password(serializer.data.get("new_password"))
+            user.save()
+            return Response(
+                {"detail": "Password changed successfully."}, status=status.HTTP_200_OK
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class SocialLoginView(generics.CreateAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = SocialLoginSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        # Logic to exchange token with social provider and return JWT
+        # For simplicity, we can rely on drf-social-oauth2 ConvertTokenView
+        # but here we might want custom logic to link/create users.
+        # This is a placeholder for custom social login logic if needed beyond standard drf-social-oauth2.
+        return Response({"detail": "Use /auth/convert-token endpoint from drf-social-oauth2"}, status=status.HTTP_501_NOT_IMPLEMENTED)
+

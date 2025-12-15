@@ -1,3 +1,4 @@
+from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from .models import Certificate, CustomUser, UserProfile
 
@@ -70,3 +71,18 @@ class UserDetailSerializer(serializers.ModelSerializer):
         profile.save()
 
         return super().update(instance, validated_data)
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)
+
+    def validate_new_password(self, value):
+        validate_password(value)
+        return value
+
+
+class SocialLoginSerializer(serializers.Serializer):
+    access_token = serializers.CharField(required=True)
+    provider = serializers.ChoiceField(choices=[("google", "Google"), ("github", "GitHub")])
+
