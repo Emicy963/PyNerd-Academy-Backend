@@ -42,9 +42,20 @@ class EnrollmentSerializer(serializers.ModelSerializer):
 
 
 class ProgressSerializer(serializers.ModelSerializer):
+    lesson_title = serializers.CharField(source="lesson.title", read_only=True)
+    course_title = serializers.CharField(source="lesson.module.course.title", read_only=True)
+
     class Meta:
         model = Progress
-        fields = ["id", "student", "lesson", "is_completed", "completed_at"]
+        fields = [
+            "id",
+            "student",
+            "lesson",
+            "lesson_title",
+            "course_title",
+            "is_completed",
+            "completed_at",
+        ]
         read_only_fields = ["student"]
 
 

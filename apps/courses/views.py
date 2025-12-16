@@ -4,6 +4,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
+from rest_framework.filters import SearchFilter
+from django_filters.rest_framework import DjangoFilterBackend
 from .models import Course, Enrollment, Progress, Lesson
 from .permissions import IsInstructor
 from .serializers import CourseSerializer, EnrollmentSerializer, ProgressSerializer
@@ -19,6 +21,9 @@ class CourseViewSet(viewsets.ModelViewSet):
     serializer_class = CourseSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = StandardResultSetPagination
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filterset_fields = ["instructor", "is_published"]
+    search_fields = ["title", "description"]
 
     def get_permissions(self):
         if self.action == "list":
