@@ -17,6 +17,9 @@ class StandardResultSetPagination(pagination.LimitOffsetPagination):
 
 
 class CourseViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for viewing and editing course instances.
+    """
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
     permission_classes = [IsAuthenticated]
@@ -35,6 +38,10 @@ class CourseViewSet(viewsets.ModelViewSet):
         return [permission() for permission in permission_classes]
 
     def get_queryset(self):
+        """
+        Optionally restricts the returned courses to a given user,
+        by filtering against a `username` query parameter in the URL.
+        """
         user = self.request.user
         queryset = Course.objects.select_related("instructor").prefetch_related("modules__lessons")
         if user.is_authenticated and user.role == "INSTRUCTOR":
@@ -42,6 +49,9 @@ class CourseViewSet(viewsets.ModelViewSet):
         return queryset.filter(is_published=True)
 
     def perform_create(self, serializer):
+        """
+        Associate the current user as instructor when creating a course.
+        """
         serializer.save(instructor=self.request.user)
 
     def update(self, request, *args, **kwargs):
@@ -56,6 +66,9 @@ class CourseViewSet(viewsets.ModelViewSet):
     @extend_schema(request=None, responses={201: EnrollmentSerializer})
     @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
     def enroll(self, request, pk=None):
+        """
+        Enroll the current user (if student) in the course.
+        """
         course = self.get_object()
         if request.user.role != "STUDENT":
             return Response(
@@ -75,6 +88,9 @@ class CourseViewSet(viewsets.ModelViewSet):
 
 
 class ProgressViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for viewing and updating student progress.
+    """
     queryset = Progress.objects.all()
     serializer_class = ProgressSerializer
     permission_classes = [IsAuthenticated]

@@ -19,7 +19,9 @@ class CustomUserManager(BaseUserManager):
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email, password, **extra_fields):
+        """
+        Create and save a SuperUser with the given email and password.
+        """
         extra_fields.setdefault("role", "ADMIN")
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
@@ -57,28 +59,20 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
 
     objects = CustomUserManager()
 
-    # @property
-    # def stats(self):
-    #     """Calcula estatísticas do usuário"""
-    #     return {
-    #         'coursesCompleted': self.enrollments.filter(completed_at__isnull=False).count(),
-    #         'lessonsCompleted': self.progress.filter(is_completed=True).count(),
-    #         'averageScore': self.calculate_average_score(),
-    #         # ... outros stats
-    #     }
-
-    USERNAME_FIELD = "email"
-    REQUIRED_FIELDS = ["role"]
-
     def clean(self):
+        """Ensure instructors are approved before activation."""
         if self.role == "INSTRUCTOR" and not self.is_approved:
             raise ValidationError("Instructors must be approved before activation.")
 
     def __str__(self):
+        """Return email as string representation."""
         return self.email
 
 
 class UserProfile(models.Model):
+    """
+    Profile model for additional user information.
+    """
     user = models.OneToOneField(
         CustomUser, on_delete=models.CASCADE, related_name="profile"
     )
@@ -95,6 +89,9 @@ class UserProfile(models.Model):
 
 
 class Certificate(models.Model):
+    """
+    Model representing a certificate issued to a student upon course completion.
+    """
     student = models.ForeignKey(
         CustomUser, on_delete=models.CASCADE, related_name="certificates"
     )

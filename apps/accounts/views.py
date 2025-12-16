@@ -69,10 +69,16 @@ class RegisterView(generics.CreateAPIView):
     responses={200: None},  # No response body
 )
 class ActivateAccountView(generics.GenericAPIView):
+    """
+    View to activate a user account via email link.
+    """
     permission_classes = [AllowAny]
     serializer_class = None  # Explicitly set to None to avoid auto-generation warnings
 
     def get(self, request, uidb64, token):
+        """
+        Activate user account if token is valid.
+        """
         try:
             uid = force_str(urlsafe_base64_decode(uidb64))
             user = CustomUser.objects.get(pk=uid)
@@ -89,11 +95,17 @@ class ActivateAccountView(generics.GenericAPIView):
 
 
 class UserViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for viewing and editing user instances.
+    """
     queryset = CustomUser.objects.all()
     serializer_class = UserDetailSerializer
     permission_classes = [IsAuthenticated]
 
     def get_permissions(self):
+        """
+        Instantiate and return the list of permissions that this view requires.
+        """
         if self.action == "create":
             permission_classes = [AllowAny]
         elif self.action in ["update", "partial_update"]:
@@ -104,6 +116,9 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["get"], permission_classes=[IsAuthenticated])
     def profile(self, request, pk=None):
+        """
+        Retrieve the profile of the current user.
+        """
         user = self.get_object()
         if request.user != user and not request.user.is_superuser:
             return Response(
@@ -114,6 +129,9 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["post"], permission_classes=[IsAuthenticated])
     def change_password(self, request):
+        """
+        Change the password for the current user.
+        """
         serializer = ChangePasswordSerializer(data=request.data)
         if serializer.is_valid():
             user = request.user
@@ -131,10 +149,16 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class SocialLoginView(generics.CreateAPIView):
+    """
+    View to handle social login.
+    """
     permission_classes = [AllowAny]
     serializer_class = SocialLoginSerializer
 
     def create(self, request, *args, **kwargs):
+        """
+        Handle post request for social login.
+        """
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         # Logic to exchange token with social provider and return JWT

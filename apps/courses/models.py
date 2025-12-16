@@ -5,6 +5,9 @@ from polymorphic.models import PolymorphicModel
 
 
 class Course(models.Model):
+    """
+    Model representing a course.
+    """
     title = models.CharField(max_length=200)
     description = models.TextField()
     instructor = models.ForeignKey(
@@ -44,6 +47,7 @@ class Course(models.Model):
 
 
     def clean(self):
+        """Ensure only instructors can create courses."""
         if self.instructor.role != "INSTRUCTOR":
             raise ValidationError("Only instructor can create courses.")
 
@@ -52,6 +56,9 @@ class Course(models.Model):
 
 
 class Module(models.Model):
+    """
+    Model representing a module within a course.
+    """
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="modules")
     title = models.CharField(max_length=200)
     order = models.PositiveIntegerField()
@@ -64,6 +71,9 @@ class Module(models.Model):
 
 
 class Lesson(PolymorphicModel):
+    """
+    Model representing a lesson within a module.
+    """
     module = models.ForeignKey(Module, on_delete=models.CASCADE, related_name="lessons")
     title = models.CharField(max_length=200)
     video_url = models.URLField(validators=[URLValidator()])
@@ -72,6 +82,7 @@ class Lesson(PolymorphicModel):
     ALLOWED_DOMAINS = ["youtube.com", "vimeo.com"]
 
     def clean(self):
+        """Validate video URL domain."""
         try:
             from urllib.parse import urlparse
 
@@ -87,6 +98,9 @@ class Lesson(PolymorphicModel):
 
 
 class Enrollment(models.Model):
+    """
+    Model representing a student's enrollment in a course.
+    """
     student = models.ForeignKey(
         "accounts.CustomUser",
         limit_choices_to={"role": "STUDENT"},
