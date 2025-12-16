@@ -21,7 +21,7 @@ class Course(models.Model):
         ('intermediate', 'Intermediate'),
         ('advanced', 'Advanced')
     ])
-    category = models.CharField(max_length=50)
+    category = models.CharField(max_length=50, default="General")
     duration = models.PositiveIntegerField(help_text="Duration in minutes")
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     is_published = models.BooleanField(default=False)

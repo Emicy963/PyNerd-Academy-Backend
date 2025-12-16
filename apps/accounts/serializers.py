@@ -32,6 +32,7 @@ class UserSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "email",
+            "password",
             "first_name",
             "last_name",
             "role",
@@ -39,6 +40,7 @@ class UserSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = ["id", "is_approved", "created_at"]
+        extra_kwargs = {"password": {"write_only": True}}
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
