@@ -62,7 +62,7 @@ class CertificateSerializer(serializers.ModelSerializer):
             "course_title",
             "instructor_name",
             "issued_at",
-            "certificate_url",
+            "certificate_urls",
             "description",
         ]
 
