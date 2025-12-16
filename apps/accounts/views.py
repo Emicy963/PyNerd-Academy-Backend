@@ -8,6 +8,7 @@ from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 from drf_social_oauth2.views import ConvertTokenView
 from .models import CustomUser, UserProfile
 from .serializers import (
@@ -60,8 +61,16 @@ class RegisterView(generics.CreateAPIView):
         return Response({"detail": "User created. Please check email for activation."}, status=status.HTTP_201_CREATED)
 
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter("uidb64", OpenApiTypes.STR, location=OpenApiParameter.PATH),
+        OpenApiParameter("token", OpenApiTypes.STR, location=OpenApiParameter.PATH),
+    ],
+    responses={200: None},  # No response body
+)
 class ActivateAccountView(generics.GenericAPIView):
     permission_classes = [AllowAny]
+    serializer_class = None  # Explicitly set to None to avoid auto-generation warnings
 
     def get(self, request, uidb64, token):
         try:

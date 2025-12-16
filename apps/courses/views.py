@@ -97,8 +97,10 @@ class ProgressViewSet(viewsets.ModelViewSet):
         return super().update(request, *args, **kwargs)
 
 
+@extend_schema(responses={200: OpenApiTypes.OBJECT})
 class StudentProgressView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = None  # No serializer needed for this custom response
 
     def retrieve(self, request, *args, **kwargs):
         student_id = self.kwargs["id"]
