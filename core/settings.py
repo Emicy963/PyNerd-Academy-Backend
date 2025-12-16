@@ -133,7 +133,7 @@ AUTH_USER_MODEL = "accounts.CustomUser"
 
 LANGUAGE_CODE = "pt"
 
-TIME_ZONE = "Africa-Luanda"
+TIME_ZONE = "Africa/Luanda"
 
 USE_I18N = True
 
