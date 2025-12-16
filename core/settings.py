@@ -158,7 +158,6 @@ SOCIAL_AUTH_GITHUB_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
 # Define SOCIAL_AUTH_PIPELINE if needed for custom user creation logic
 
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 

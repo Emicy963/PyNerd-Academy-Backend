@@ -2,7 +2,7 @@
 
 ![PyNerd Logo](https://via.placeholder.com/150?text=PyNerd+Logo)
 
-[![CI](https://github.com/Start-Up-Angola/pynerd-mvp/actions/workflows/ci.yml/badge.svg)](https://github.com/Start-Up-Angola/pynerd-mvp/actions/workflows/ci.yml)
+[![CI](https://github.com/Emicy963/PyNerd-Academy-Backend/actions/workflows/ci.yml/badge.svg)](https://github.com/Emicy963/PyNerd-Academy-Backend/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![Django](https://img.shields.io/badge/django-5.0+-green.svg)](https://www.djangoproject.com/)

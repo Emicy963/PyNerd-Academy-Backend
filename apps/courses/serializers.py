@@ -49,7 +49,9 @@ class EnrollmentSerializer(serializers.ModelSerializer):
 
 class ProgressSerializer(serializers.ModelSerializer):
     lesson_title = serializers.CharField(source="lesson.title", read_only=True)
-    course_title = serializers.CharField(source="lesson.module.course.title", read_only=True)
+    course_title = serializers.CharField(
+        source="lesson.module.course.title", read_only=True
+    )
 
     class Meta:
         model = Progress

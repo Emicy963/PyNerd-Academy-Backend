@@ -8,6 +8,7 @@ class Course(models.Model):
     """
     Model representing a course.
     """
+
     title = models.CharField(max_length=200)
     description = models.TextField()
     instructor = models.ForeignKey(
@@ -19,32 +20,34 @@ class Course(models.Model):
     slug = models.SlugField(unique=True)
     thumbnail = models.URLField(blank=True)
     full_description = models.TextField(blank=True)
-    level = models.CharField(max_length=20, choices=[
-        ('beginner', 'Beginner'),
-        ('intermediate', 'Intermediate'),
-        ('advanced', 'Advanced')
-    ])
+    level = models.CharField(
+        max_length=20,
+        choices=[
+            ("beginner", "Beginner"),
+            ("intermediate", "Intermediate"),
+            ("advanced", "Advanced"),
+        ],
+    )
     category = models.CharField(max_length=50, default="General")
     duration = models.PositiveIntegerField(help_text="Duration in minutes")
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     is_published = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     # Campos calculados
     @property
     def rating(self):
         # Calcular rating médio das avaliações
         pass
-    
+
     @property
     def students_count(self):
         return self.enrollments.count()
-    
+
     # def save(self, *args, **kwargs):
     #     if not self.slug:
     #         self.slug = slugify(self.title)
     #     super().save(*args, **kwargs)
-
 
     def clean(self):
         """Ensure only instructors can create courses."""
@@ -59,6 +62,7 @@ class Module(models.Model):
     """
     Model representing a module within a course.
     """
+
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="modules")
     title = models.CharField(max_length=200)
     order = models.PositiveIntegerField()
@@ -74,6 +78,7 @@ class Lesson(PolymorphicModel):
     """
     Model representing a lesson within a module.
     """
+
     module = models.ForeignKey(Module, on_delete=models.CASCADE, related_name="lessons")
     title = models.CharField(max_length=200)
     video_url = models.URLField(validators=[URLValidator()])
@@ -101,6 +106,7 @@ class Enrollment(models.Model):
     """
     Model representing a student's enrollment in a course.
     """
+
     student = models.ForeignKey(
         "accounts.CustomUser",
         limit_choices_to={"role": "STUDENT"},
@@ -146,54 +152,65 @@ class Progress(models.Model):
     def __str__(self):
         return f"{self.student.email} - {self.lesson.title}"
 
+
 class Quiz(models.Model):
-    lesson = models.OneToOneField(Lesson, on_delete=models.CASCADE, related_name='quiz')
+    lesson = models.OneToOneField(Lesson, on_delete=models.CASCADE, related_name="quiz")
     time_limit = models.PositiveIntegerField(help_text="Time limit in seconds")
     passing_score = models.PositiveIntegerField(default=70)
 
+
 class Question(models.Model):
-    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='questions')
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name="questions")
     question = models.TextField()
-    type = models.CharField(max_length=20, choices=[
-        ('multiple_choice', 'Multiple Choice'),
-        ('true_false', 'True/False'),
-        ('essay', 'Essay')
-    ])
+    type = models.CharField(
+        max_length=20,
+        choices=[
+            ("multiple_choice", "Multiple Choice"),
+            ("true_false", "True/False"),
+            ("essay", "Essay"),
+        ],
+    )
     points = models.PositiveIntegerField(default=1)
 
+
 class Option(models.Model):
-    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='options')
+    question = models.ForeignKey(
+        Question, on_delete=models.CASCADE, related_name="options"
+    )
     text = models.TextField()
     is_correct = models.BooleanField(default=False)
 
+
 class Note(models.Model):
     student = models.ForeignKey(
-        "accounts.CustomUser", 
-        on_delete=models.CASCADE, 
-        related_name='notes')
-    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='notes')
+        "accounts.CustomUser", on_delete=models.CASCADE, related_name="notes"
+    )
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name="notes")
     content = models.TextField()
     timestamp = models.PositiveIntegerField(help_text="Position in video (seconds)")
     created_at = models.DateTimeField(auto_now_add=True)
 
+
 class Resource(models.Model):
-    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='resources')
+    lesson = models.ForeignKey(
+        Lesson, on_delete=models.CASCADE, related_name="resources"
+    )
     title = models.CharField(max_length=200)
-    type = models.CharField(max_length=20, choices=[
-        ('pdf', 'PDF'),
-        ('zip', 'ZIP'),
-        ('link', 'Link')
-    ])
+    type = models.CharField(
+        max_length=20, choices=[("pdf", "PDF"), ("zip", "ZIP"), ("link", "Link")]
+    )
     file_url = models.URLField()
     size = models.PositiveIntegerField(help_text="File size in bytes")
 
+
 class Bookmark(models.Model):
     student = models.ForeignKey(
-        "accounts.CustomUser", 
-        on_delete=models.CASCADE, 
-        related_name='bookmarks')
-    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='bookmarks')
+        "accounts.CustomUser", on_delete=models.CASCADE, related_name="bookmarks"
+    )
+    lesson = models.ForeignKey(
+        Lesson, on_delete=models.CASCADE, related_name="bookmarks"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     class Meta:
-        unique_together = ('student', 'lesson')
+        unique_together = ("student", "lesson")

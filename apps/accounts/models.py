@@ -1,34 +1,9 @@
 from django.db import models
-from django.contrib.auth.models import (
-    BaseUserManager,
-    AbstractBaseUser,
-    PermissionsMixin,
-)
+from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 
 
-class CustomUserManager(BaseUserManager):
-    """Model for Manager Custom User"""
-
-    def create_user(self, email, password=None, **extra_fields):
-        if not email:
-            raise ValueError("The email field must be set")
-        email = self.normalize_email(email)
-        user = self.model(email=email, **extra_fields)
-        user.set_password(password)
-        user.save(using=self._db)
-        return user
-
-        """
-        Create and save a SuperUser with the given email and password.
-        """
-        extra_fields.setdefault("role", "ADMIN")
-        extra_fields.setdefault("is_staff", True)
-        extra_fields.setdefault("is_superuser", True)
-        return self.create_user(email, password, **extra_fields)
-
-
-class CustomUser(AbstractBaseUser, PermissionsMixin):
+class CustomUser(AbstractUser):
     ROLE_CHOICES = (
         ("STUDENT", "Student"),
         ("INSTRUCTOR", "Instructor"),
@@ -36,28 +11,26 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     )
 
     PLAN_CHOICES = (
-        ('free', 'Free'),
-        ('premium', 'Premium'),
-        ('enterprise', 'Enterprise')
+        ("free", "Free"),
+        ("premium", "Premium"),
+        ("enterprise", "Enterprise"),
     )
 
     email = models.EmailField(unique=True)
-    first_name = models.CharField(max_length=30, blank=True)
-    last_name = models.CharField(max_length=30, blank=True)
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES)
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default="STUDENT")
     avatar = models.URLField(blank=True)
     plan = models.CharField(max_length=20, choices=PLAN_CHOICES, default="free")
     study_streak = models.PositiveIntegerField(default=0)
-    total_study_time = models.PositiveIntegerField(default=0) # in seconds
+    total_study_time = models.PositiveIntegerField(default=0)  # in seconds
     is_approved = models.BooleanField(default=False)
-    is_active = models.BooleanField(default=True)
-    is_staff = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
+
+    # Using default is_active, is_staff, date_joined from AbstractUser
 
     # Preference in JSON
     preferences = models.JSONField(default=dict, blank=True)
 
-    objects = CustomUserManager()
+    USERNAME_FIELD = "username"
+    REQUIRED_FIELDS = ["email"]
 
     def clean(self):
         """Ensure instructors are approved before activation."""
@@ -73,6 +46,7 @@ class UserProfile(models.Model):
     """
     Profile model for additional user information.
     """
+
     user = models.OneToOneField(
         CustomUser, on_delete=models.CASCADE, related_name="profile"
     )
@@ -92,6 +66,7 @@ class Certificate(models.Model):
     """
     Model representing a certificate issued to a student upon course completion.
     """
+
     student = models.ForeignKey(
         CustomUser, on_delete=models.CASCADE, related_name="certificates"
     )

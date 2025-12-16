@@ -20,6 +20,7 @@ class CourseViewSet(viewsets.ModelViewSet):
     """
     ViewSet for viewing and editing course instances.
     """
+
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
     permission_classes = [IsAuthenticated]
@@ -43,7 +44,9 @@ class CourseViewSet(viewsets.ModelViewSet):
         by filtering against a `username` query parameter in the URL.
         """
         user = self.request.user
-        queryset = Course.objects.select_related("instructor").prefetch_related("modules__lessons")
+        queryset = Course.objects.select_related("instructor").prefetch_related(
+            "modules__lessons"
+        )
         if user.is_authenticated and user.role == "INSTRUCTOR":
             return queryset.filter(instructor=user)
         return queryset.filter(is_published=True)
@@ -91,6 +94,7 @@ class ProgressViewSet(viewsets.ModelViewSet):
     """
     ViewSet for viewing and updating student progress.
     """
+
     queryset = Progress.objects.all()
     serializer_class = ProgressSerializer
     permission_classes = [IsAuthenticated]

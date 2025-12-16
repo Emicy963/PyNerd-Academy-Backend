@@ -1,87 +1,104 @@
-# PyNerd API Guide
+# PyNerd API Guide & Frontend Integration
 
-PyNerd provides a RESTful API built with Django REST Framework. This guide provides a quick overview of how to interact with the API.
+This guide details how to integrate the PyNerd Backend API with the frontend application.
 
-## Interactive Documentation
+## 📚 Documentation
 
-We provide interactive API documentation via Swagger UI and Redoc.
+- **Swagger UI**: [`/api/schema/swagger-ui/`](http://localhost:8000/api/schema/swagger-ui/) - Interactive testing.
+- **Redoc**: [`/api/schema/redoc/`](http://localhost:8000/api/schema/redoc/) - API Reference.
 
-- **Swagger UI**: `/api/schema/swagger-ui/`
-  - Interactive testing of endpoints.
-- **Redoc**: `/api/schema/redoc/`
-  - Clean, organized reference documentation.
+## 🔐 Authentication
 
-## Authentication
+### 1. Registration
 
-The API uses **JWT (JSON Web Token)** for authentication.
+**Endpoint**: `POST /api/auth/register/`
 
-### 1. Register
-
-`POST /api/auth/register/`
+The backend generates a unique `username` if not provided, but since we use `AbstractUser`, sending `username` is recommended if you have a username field.
 
 ```json
 {
-  "email": "user@example.com",
-  "password": "securepassword",
+  "username": "coolnerd", // Optional (backend can generate), but recommended
+  "email": "student@pynerd.com",
+  "password": "strongPassword123!",
   "first_name": "John",
   "last_name": "Doe",
-  "role": "STUDENT"
+  "role": "STUDENT" // Options: STUDENT, INSTRUCTOR
 }
 ```
 
-### 2. Login (Get Token)
+### 2. Account Activation
 
-`POST /api/token/`
+After registration, the user receives an email with a link:
+`http://localhost:8000/api/auth/activate/{uid}/{token}/`
+
+**Frontend Flow**:
+
+1. User clicks the link in email.
+2. If the link points to frontend, the frontend should extract `uid` and `token` and call:
+   **GET** `/api/auth/activate/{uid}/{token}/`
+3. If successful (`200 OK`), redirect user to Login page.
+
+### 3. Login (Dual Auth)
+
+**Endpoint**: `POST /api/auth/login/`
+
+Supports login via **Username** or **Email**. Send the value in the `username` field.
 
 ```json
 {
-  "email": "user@example.com",
-  "password": "securepassword"
+  "username": "student@pynerd.com", // OR "coolnerd"
+  "password": "strongPassword123!"
 }
 ```
 
-**Response:**
+**Response**:
 
 ```json
 {
   "access": "eyJ0eX...",
-  "refresh": "eyJ0eX..."
+  "refresh": "eyJ0eX...",
+  "role": "STUDENT" // Decoded from token payload if needed
 }
 ```
 
-### 3. Using the Token
+### 4. Social Login (Google/GitHub)
 
-Include the access token in the `Authorization` header of subsequent requests:
+We use `drf-social-oauth2`.
 
+**Endpoint**: `POST /api/auth/convert-token`
+
+**Payload**:
+
+```json
+{
+  "grant_type": "convert_token",
+  "client_id": "<YOUR_CLIENT_ID>",
+  "client_secret": "<YOUR_CLIENT_SECRET>",
+  "backend": "google-oauth2", // or "github"
+  "token": "<USER_ACCESS_TOKEN_FROM_PROVIDER>"
+}
 ```
-Authorization: Bearer <your_access_token>
-```
 
-## Key Endpoints
+## 📚 Courses
 
-### Accounts
+### 1. List Courses
 
-- `GET /api/users/profile/`: Get current user profile.
-- `POST /api/users/change_password/`: Change password.
+**Endpoint**: `GET /api/courses/`
 
-### Courses
+**Filters**:
 
-- `GET /api/courses/`: List available courses.
-- `GET /api/courses/{slug}/`: Get course details.
-- `POST /api/courses/{id}/enroll/`: Enroll in a course (Student only).
+- `?category=Programming`: Filter by category.
+- `?search=Python`: Search title/description/instructor.
 
-### Progress
+**Response**:
+Returns a paginated list of published courses.
 
-- `PATCH /api/progress/{id}/`: Update lesson completion status.
+### 2. Enrollment
 
-## Error Handling
+**Endpoint**: `POST /api/courses/{id}/enroll/`
+Requires `Authentication`.
 
-Standard HTTP status codes are used:
+## 🔄 Common Errors
 
-- `200 OK`: Success.
-- `201 Created`: Resource created.
-- `400 Bad Request`: Validation error.
-- `401 Unauthorized`: Authentication failed or missing.
-- `403 Forbidden`: Permission denied.
-- `404 Not Found`: Resource not found.
-- `500 Internal Server Error`: Server error.
+- `400 Bad Request`: Check `username` field in Login.
+- `401 Unauthorized`: Token expired or invalid credentials.

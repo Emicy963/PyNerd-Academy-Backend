@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.urls import include, path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshSlidingView
+from apps.accounts.serializers import CustomTokenObtainPairSerializer
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,
@@ -15,10 +16,12 @@ urlpatterns = [
     path("api/", include("apps.accounts.urls")),
     path("api/", include("apps.courses.urls")),
     # JWT
-    path("api/auth/login/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path(
-        "api/auth/refresh/", TokenRefreshSlidingView.as_view(), name="token_refresh"
+        "api/auth/login/",
+        TokenObtainPairView.as_view(serializer_class=CustomTokenObtainPairSerializer),
+        name="token_obtain_pair",
     ),
+    path("api/auth/refresh/", TokenRefreshSlidingView.as_view(), name="token_refresh"),
     # Schema & Docs
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(

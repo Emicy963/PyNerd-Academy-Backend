@@ -35,11 +35,12 @@ class RegisterView(generics.CreateAPIView):
         is_approved = role != "INSTRUCTOR"  # Instructors need approval
 
         user = CustomUser.objects.create_user(
+            username=serializer.validated_data["username"],
             email=serializer.validated_data["email"],
             password=serializer.validated_data["password"],
             role=role,
             is_approved=is_approved,
-            is_active=False
+            is_active=True,
         )
 
         # Create profile
@@ -49,7 +50,7 @@ class RegisterView(generics.CreateAPIView):
         token = default_token_generator.make_token(user)
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         activation_link = f"http://localhost:8000/api/auth/activate/{uid}/{token}/"
-        
+
         send_mail(
             subject="Activate your PyNerd Account",
             message=f"Please click the link to activate: {activation_link}",
@@ -58,7 +59,10 @@ class RegisterView(generics.CreateAPIView):
             fail_silently=False,
         )
 
-        return Response({"detail": "User created. Please check email for activation."}, status=status.HTTP_201_CREATED)
+        return Response(
+            {"detail": "User created. Please check email for activation."},
+            status=status.HTTP_201_CREATED,
+        )
 
 
 @extend_schema(
@@ -72,6 +76,7 @@ class ActivateAccountView(generics.GenericAPIView):
     """
     View to activate a user account via email link.
     """
+
     permission_classes = [AllowAny]
     serializer_class = None  # Explicitly set to None to avoid auto-generation warnings
 
@@ -88,16 +93,21 @@ class ActivateAccountView(generics.GenericAPIView):
         if user is not None and default_token_generator.check_token(user, token):
             user.is_active = True
             user.save()
-            return Response({"detail": "Account activated successfully."}, status=status.HTTP_200_OK)
+            return Response(
+                {"detail": "Account activated successfully."}, status=status.HTTP_200_OK
+            )
         else:
-            return Response({"detail": "Invalid activation link."}, status=status.HTTP_400_BAD_REQUEST)
-
+            return Response(
+                {"detail": "Invalid activation link."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
 
 class UserViewSet(viewsets.ModelViewSet):
     """
     ViewSet for viewing and editing user instances.
     """
+
     queryset = CustomUser.objects.all()
     serializer_class = UserDetailSerializer
     permission_classes = [IsAuthenticated]
@@ -152,6 +162,7 @@ class SocialLoginView(generics.CreateAPIView):
     """
     View to handle social login.
     """
+
     permission_classes = [AllowAny]
     serializer_class = SocialLoginSerializer
 
@@ -165,5 +176,7 @@ class SocialLoginView(generics.CreateAPIView):
         # For simplicity, we can rely on drf-social-oauth2 ConvertTokenView
         # but here we might want custom logic to link/create users.
         # This is a placeholder for custom social login logic if needed beyond standard drf-social-oauth2.
-        return Response({"detail": "Use /auth/convert-token endpoint from drf-social-oauth2"}, status=status.HTTP_501_NOT_IMPLEMENTED)
-
+        return Response(
+            {"detail": "Use /auth/convert-token endpoint from drf-social-oauth2"},
+            status=status.HTTP_501_NOT_IMPLEMENTED,
+        )

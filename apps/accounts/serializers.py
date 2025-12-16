@@ -12,34 +12,50 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         return token
 
     def validate(self, attrs):
+        # Multi-Auth Logic: Check if "username" is an email
+        login_input = attrs.get(self.username_field)
+        if login_input and "@" in login_input:
+            try:
+                user = CustomUser.objects.get(email=login_input)
+                # Swap email for the actual username expected by authenticate()
+                attrs[self.username_field] = user.username
+            except CustomUser.DoesNotExist:
+                # If not found, let standard validation handle the failure
+                pass
+
         data = super().validate(attrs)
-        data.update({
-            "user": {
-                "id": self.user.id,
-                'name': f"{self.user.first_name} {self.user.last_name}",
-                'email': self.user.email,
-                'avatar': self.user.avatar,
-                'plan': self.user.plan,
-                'studyStreak': self.user.study_streak,
-                'totalStudyTime': self.user.total_study_time,
+        data.update(
+            {
+                "user": {
+                    "id": self.user.id,
+                    "username": self.user.username,
+                    "name": self.user.get_full_name(),
+                    "email": self.user.email,
+                    "avatar": self.user.avatar,
+                    "plan": self.user.plan,
+                    "studyStreak": self.user.study_streak,
+                    "totalStudyTime": self.user.total_study_time,
+                }
             }
-        })
+        )
         return data
+
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = [
             "id",
+            "username",
             "email",
             "password",
             "first_name",
             "last_name",
             "role",
             "is_approved",
-            "created_at",
+            "date_joined",
         ]
-        read_only_fields = ["id", "is_approved", "created_at"]
+        read_only_fields = ["id", "is_approved", "date_joined"]
         extra_kwargs = {"password": {"write_only": True}}
 
 
@@ -109,5 +125,6 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 class SocialLoginSerializer(serializers.Serializer):
     access_token = serializers.CharField(required=True)
-    provider = serializers.ChoiceField(choices=[("google", "Google"), ("github", "GitHub")])
-
+    provider = serializers.ChoiceField(
+        choices=[("google", "Google"), ("github", "GitHub")]
+    )
