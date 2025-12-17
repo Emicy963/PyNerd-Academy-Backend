@@ -77,7 +77,7 @@ class AuthTests(TestCase):
             "password": "password123",
             "first_name": "Bad",
             "last_name": "Actor",
-            "role": "INSTRUCTOR", # Trying to be instructor
+            "role": "INSTRUCTOR",  # Trying to be instructor
         }
         response = self.client.post(self.register_url, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -91,17 +91,17 @@ class AuthTests(TestCase):
         reset_url = "/api/auth/password-reset/"
         response = self.client.post(reset_url, {"email": self.user.email})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        
-        # 2. Confirm Reset (Need to manually generate token/uid as we can't easily intercept email in this test seamlessly without mocking, 
+
+        # 2. Confirm Reset (Need to manually generate token/uid as we can't easily intercept email in this test seamlessly without mocking,
         # but we can simulate the token generation logic which is what the view does)
         token = default_token_generator.make_token(self.user)
         uid = urlsafe_base64_encode(force_bytes(self.user.pk))
-        
+
         confirm_url = f"/api/auth/password-reset-confirm/{uid}/{token}/"
         new_pass_data = {"new_password": "new_secure_password"}
         response = self.client.post(confirm_url, new_pass_data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        
+
         # 3. Verify Login with new password
         self.user.refresh_from_db()
         self.assertTrue(self.user.check_password("new_secure_password"))

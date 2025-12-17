@@ -13,7 +13,7 @@ from .serializers import (
     CourseSerializer,
     EnrollmentSerializer,
     ProgressSerializer,
-    QuizSerializer
+    QuizSerializer,
 )
 
 
@@ -105,7 +105,7 @@ class CourseViewSet(viewsets.ModelViewSet):
                 {"detail": "Only students can have enrollments."},
                 status=status.HTTP_403_FORBIDDEN,
             )
-        
+
         enrolled_courses = Course.objects.filter(enrollments__student=request.user)
         page = self.paginate_queryset(enrolled_courses)
         if page is not None:
@@ -149,12 +149,12 @@ class ProgressViewSet(viewsets.ModelViewSet):
             if instance.is_completed:
                 # Count total lessons
                 total_lessons = Lesson.objects.filter(module__course=course).count()
-                
+
                 # Count completed lessons
                 completed_lessons = Progress.objects.filter(
-                    student=request.user, 
-                    lesson__module__course=course, 
-                    is_completed=True
+                    student=request.user,
+                    lesson__module__course=course,
+                    is_completed=True,
                 ).count()
 
                 if total_lessons > 0 and total_lessons == completed_lessons:
@@ -162,9 +162,9 @@ class ProgressViewSet(viewsets.ModelViewSet):
                     Certificate.objects.get_or_create(
                         student=request.user,
                         course=course,
-                        defaults={"description": f"Certificate for {course.title}"}
+                        defaults={"description": f"Certificate for {course.title}"},
                     )
-        
+
         return response
 
 
@@ -221,6 +221,7 @@ class QuizViewSet(viewsets.ReadOnlyModelViewSet):
     """
     ReadOnly ViewSet for quizzes.
     """
+
     queryset = Quiz.objects.all()
     serializer_class = QuizSerializer
     permission_classes = [IsAuthenticated]
@@ -229,7 +230,7 @@ class QuizViewSet(viewsets.ReadOnlyModelViewSet):
         """
         Filter quizzes by lesson_id if provided.
         """
-        lesson_id = self.request.query_params.get('lesson_id')
+        lesson_id = self.request.query_params.get("lesson_id")
         if lesson_id:
             return self.queryset.filter(lesson_id=lesson_id)
         return self.queryset

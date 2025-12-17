@@ -136,7 +136,7 @@ class RequestPasswordResetSerializer(serializers.Serializer):
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
     new_password = serializers.CharField(write_only=True)
-    
+
     def validate_new_password(self, value):
         validate_password(value)
         return value

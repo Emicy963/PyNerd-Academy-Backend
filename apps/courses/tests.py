@@ -202,13 +202,13 @@ class CourseAPITests(TestCase):
         """Student can list quizzes for a lesson"""
         # Create Quiz
         quiz = Quiz.objects.create(lesson=self.lesson, time_limit=300, passing_score=70)
-        
+
         self.client.force_authenticate(user=self.student)
         url = f"/api/quizzes/?lesson_id={self.lesson.id}"
         response = self.client.get(url)
-        
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data["results"]), 1) 
+        self.assertEqual(len(response.data["results"]), 1)
         self.assertEqual(response.data["results"][0]["id"], quiz.id)
 
     def test_certificate_generation(self):
@@ -216,12 +216,16 @@ class CourseAPITests(TestCase):
         Enrollment.objects.create(student=self.student, course=self.course)
         # Create progress and mark complete
         progress = Progress.objects.create(student=self.student, lesson=self.lesson)
-        
+
         self.client.force_authenticate(user=self.student)
         url = f"/api/progress/{progress.id}/"
         data = {"is_completed": True}
         response = self.client.patch(url, data, format="json")
-        
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # Check certificate
-        self.assertTrue(Certificate.objects.filter(student=self.student, course=self.course).exists())
+        self.assertTrue(
+            Certificate.objects.filter(
+                student=self.student, course=self.course
+            ).exists()
+        )

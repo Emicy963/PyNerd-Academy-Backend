@@ -200,8 +200,10 @@ class RequestPasswordResetView(generics.GenericAPIView):
             uid = urlsafe_base64_encode(force_bytes(user.pk))
             # Frontend URL for password reset (e.g., http://localhost:3000/reset-password/uid/token)
             # For now pointing to API or a mock frontend URL
-            reset_link = f"http://localhost:8000/api/auth/password-reset-confirm/{uid}/{token}/"
-            
+            reset_link = (
+                f"http://localhost:8000/api/auth/password-reset-confirm/{uid}/{token}/"
+            )
+
             send_mail(
                 subject="Reset your PyNerd Password",
                 message=f"Click the link to reset your password: {reset_link}",
@@ -212,8 +214,11 @@ class RequestPasswordResetView(generics.GenericAPIView):
         except CustomUser.DoesNotExist:
             # We do not want to reveal if a user exists or not
             pass
-        
-        return Response({"detail": "Password reset email sent if account exists."}, status=status.HTTP_200_OK)
+
+        return Response(
+            {"detail": "Password reset email sent if account exists."},
+            status=status.HTTP_200_OK,
+        )
 
 
 class PasswordResetConfirmView(generics.GenericAPIView):
@@ -223,7 +228,7 @@ class PasswordResetConfirmView(generics.GenericAPIView):
     def post(self, request, uidb64, token):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        
+
         try:
             uid = force_str(urlsafe_base64_decode(uidb64))
             user = CustomUser.objects.get(pk=uid)
@@ -233,6 +238,10 @@ class PasswordResetConfirmView(generics.GenericAPIView):
         if user is not None and default_token_generator.check_token(user, token):
             user.set_password(serializer.validated_data["new_password"])
             user.save()
-            return Response({"detail": "Password reset successfully."}, status=status.HTTP_200_OK)
-        
-        return Response({"detail": "Invalid token or link."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"detail": "Password reset successfully."}, status=status.HTTP_200_OK
+            )
+
+        return Response(
+            {"detail": "Invalid token or link."}, status=status.HTTP_400_BAD_REQUEST
+        )

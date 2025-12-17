@@ -8,7 +8,7 @@ from .views import (
     ActivateAccountView,
     SocialLoginView,
     RequestPasswordResetView,
-    PasswordResetConfirmView
+    PasswordResetConfirmView,
 )
 
 
@@ -24,7 +24,15 @@ urlpatterns = [
         name="activate",
     ),
     path("auth/social-login/", SocialLoginView.as_view(), name="social_login"),
-    path("auth/password-reset/", RequestPasswordResetView.as_view(), name="password_reset"),
-    path("auth/password-reset-confirm/<uidb64>/<token>/", PasswordResetConfirmView.as_view(), name="password_reset_confirm"),
+    path(
+        "auth/password-reset/",
+        RequestPasswordResetView.as_view(),
+        name="password_reset",
+    ),
+    path(
+        "auth/password-reset-confirm/<uidb64>/<token>/",
+        PasswordResetConfirmView.as_view(),
+        name="password_reset_confirm",
+    ),
     path("", include(router.urls)),
 ]
