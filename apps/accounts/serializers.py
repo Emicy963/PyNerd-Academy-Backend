@@ -98,7 +98,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
             "last_name",
             "role",
             "is_approved",
-            "created_at",
+            "date_joined",
             "profile",
             "certificates",
         ]
