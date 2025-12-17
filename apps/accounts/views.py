@@ -16,6 +16,8 @@ from .serializers import (
     UserSerializer,
     ChangePasswordSerializer,
     SocialLoginSerializer,
+    RequestPasswordResetSerializer,
+    PasswordResetConfirmSerializer,
 )
 from .permissions import IsSelfOrAdmin
 
@@ -31,8 +33,9 @@ class RegisterView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        role = serializer.validated_data.get("role")
-        is_approved = role != "INSTRUCTOR"  # Instructors need approval
+        # Force role to STUDENT for public registration
+        role = "STUDENT"
+        is_approved = True
 
         user = CustomUser.objects.create_user(
             username=serializer.validated_data["username"],
@@ -180,3 +183,56 @@ class SocialLoginView(generics.CreateAPIView):
             {"detail": "Use /auth/convert-token endpoint from drf-social-oauth2"},
             status=status.HTTP_501_NOT_IMPLEMENTED,
         )
+
+
+class RequestPasswordResetView(generics.GenericAPIView):
+    serializer_class = RequestPasswordResetSerializer
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data["email"]
+
+        try:
+            user = CustomUser.objects.get(email=email)
+            token = default_token_generator.make_token(user)
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            # Frontend URL for password reset (e.g., http://localhost:3000/reset-password/uid/token)
+            # For now pointing to API or a mock frontend URL
+            reset_link = f"http://localhost:8000/api/auth/password-reset-confirm/{uid}/{token}/"
+            
+            send_mail(
+                subject="Reset your PyNerd Password",
+                message=f"Click the link to reset your password: {reset_link}",
+                from_email=settings.EMAIL_HOST_USER,
+                recipient_list=[email],
+                fail_silently=False,
+            )
+        except CustomUser.DoesNotExist:
+            # We do not want to reveal if a user exists or not
+            pass
+        
+        return Response({"detail": "Password reset email sent if account exists."}, status=status.HTTP_200_OK)
+
+
+class PasswordResetConfirmView(generics.GenericAPIView):
+    serializer_class = PasswordResetConfirmSerializer
+    permission_classes = [AllowAny]
+
+    def post(self, request, uidb64, token):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        try:
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = CustomUser.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, CustomUser.DoesNotExist):
+            user = None
+
+        if user is not None and default_token_generator.check_token(user, token):
+            user.set_password(serializer.validated_data["new_password"])
+            user.save()
+            return Response({"detail": "Password reset successfully."}, status=status.HTTP_200_OK)
+        
+        return Response({"detail": "Invalid token or link."}, status=status.HTTP_400_BAD_REQUEST)

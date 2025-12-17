@@ -3,6 +3,9 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 from rest_framework import status
 from django.contrib.auth import get_user_model
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 
 User = get_user_model()
 
@@ -65,6 +68,43 @@ class AuthTests(TestCase):
         }
         response = self.client.post(self.login_url, data)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_register_force_student_role(self):
+        """Ensure registration always creates a STUDENT, ignoring input role"""
+        data = {
+            "username": "hacker_trying_admin",
+            "email": "hacker@example.com",
+            "password": "password123",
+            "first_name": "Bad",
+            "last_name": "Actor",
+            "role": "INSTRUCTOR", # Trying to be instructor
+        }
+        response = self.client.post(self.register_url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        user = User.objects.get(email="hacker@example.com")
+        self.assertEqual(user.role, "STUDENT")
+        self.assertTrue(user.is_active)
+
+    def test_password_reset_flow(self):
+        """Test the full password reset flow"""
+        # 1. Request Reset
+        reset_url = "/api/auth/password-reset/"
+        response = self.client.post(reset_url, {"email": self.user.email})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # 2. Confirm Reset (Need to manually generate token/uid as we can't easily intercept email in this test seamlessly without mocking, 
+        # but we can simulate the token generation logic which is what the view does)
+        token = default_token_generator.make_token(self.user)
+        uid = urlsafe_base64_encode(force_bytes(self.user.pk))
+        
+        confirm_url = f"/api/auth/password-reset-confirm/{uid}/{token}/"
+        new_pass_data = {"new_password": "new_secure_password"}
+        response = self.client.post(confirm_url, new_pass_data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # 3. Verify Login with new password
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password("new_secure_password"))
 
     def test_change_password(self):
         self.client.force_authenticate(user=self.user)

@@ -1,9 +1,11 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from rest_framework.test import APIClient
 from rest_framework import status
-from apps.courses.models import Course, Module, Lesson, Enrollment, Progress
+from apps.courses.models import Course, Module, Lesson, Enrollment, Progress, Quiz
+from apps.accounts.models import Certificate
 
 User = get_user_model()
 
@@ -190,8 +192,36 @@ class CourseAPITests(TestCase):
         self.client.force_authenticate(user=self.student)
         url = f"/api/progress/{progress.id}/"
         data = {"is_completed": True}
-        response = self.client.patch(url, data)
+        response = self.client.patch(url, data, format="json")
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         progress.refresh_from_db()
         self.assertTrue(progress.is_completed)
+
+    def test_list_quizzes(self):
+        """Student can list quizzes for a lesson"""
+        # Create Quiz
+        quiz = Quiz.objects.create(lesson=self.lesson, time_limit=300, passing_score=70)
+        
+        self.client.force_authenticate(user=self.student)
+        url = f"/api/quizzes/?lesson_id={self.lesson.id}"
+        response = self.client.get(url)
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data["results"]), 1) 
+        self.assertEqual(response.data["results"][0]["id"], quiz.id)
+
+    def test_certificate_generation(self):
+        """Certificate is generated when course is completed"""
+        Enrollment.objects.create(student=self.student, course=self.course)
+        # Create progress and mark complete
+        progress = Progress.objects.create(student=self.student, lesson=self.lesson)
+        
+        self.client.force_authenticate(user=self.student)
+        url = f"/api/progress/{progress.id}/"
+        data = {"is_completed": True}
+        response = self.client.patch(url, data, format="json")
+        
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Check certificate
+        self.assertTrue(Certificate.objects.filter(student=self.student, course=self.course).exists())

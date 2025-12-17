@@ -6,9 +6,15 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 from rest_framework.filters import SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import Course, Enrollment, Progress, Lesson
+from .models import Course, Enrollment, Progress, Lesson, Quiz
+from apps.accounts.models import Certificate
 from .permissions import IsInstructor
-from .serializers import CourseSerializer, EnrollmentSerializer, ProgressSerializer
+from .serializers import (
+    CourseSerializer,
+    EnrollmentSerializer,
+    ProgressSerializer,
+    QuizSerializer
+)
 
 
 class StandardResultSetPagination(pagination.LimitOffsetPagination):
@@ -89,6 +95,26 @@ class CourseViewSet(viewsets.ModelViewSet):
             EnrollmentSerializer(enrollment).data, status=status.HTTP_201_CREATED
         )
 
+    @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
+    def my_courses(self, request):
+        """
+        List courses the current user is enrolled in.
+        """
+        if request.user.role != "STUDENT":
+            return Response(
+                {"detail": "Only students can have enrollments."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        
+        enrolled_courses = Course.objects.filter(enrollments__student=request.user)
+        page = self.paginate_queryset(enrolled_courses)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(enrolled_courses, many=True)
+        return Response(serializer.data)
+
 
 class ProgressViewSet(viewsets.ModelViewSet):
     """
@@ -114,7 +140,32 @@ class ProgressViewSet(viewsets.ModelViewSet):
                 {"detail": "Not enrolled in this course."},
                 status=status.HTTP_403_FORBIDDEN,
             )
-        return super().update(request, *args, **kwargs)
+        response = super().update(request, *args, **kwargs)
+
+        # Certificate Generation Logic
+        if request.data.get("is_completed") is True:
+            # Refresh to ensure we have the latest state
+            instance.refresh_from_db()
+            if instance.is_completed:
+                # Count total lessons
+                total_lessons = Lesson.objects.filter(module__course=course).count()
+                
+                # Count completed lessons
+                completed_lessons = Progress.objects.filter(
+                    student=request.user, 
+                    lesson__module__course=course, 
+                    is_completed=True
+                ).count()
+
+                if total_lessons > 0 and total_lessons == completed_lessons:
+                    # Create Certificate if not exists
+                    Certificate.objects.get_or_create(
+                        student=request.user,
+                        course=course,
+                        defaults={"description": f"Certificate for {course.title}"}
+                    )
+        
+        return response
 
 
 @extend_schema(responses={200: OpenApiTypes.OBJECT})
@@ -164,3 +215,21 @@ class StudentProgressView(generics.RetrieveAPIView):
         ]
 
         return Response(result)
+
+
+class QuizViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    ReadOnly ViewSet for quizzes.
+    """
+    queryset = Quiz.objects.all()
+    serializer_class = QuizSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        """
+        Filter quizzes by lesson_id if provided.
+        """
+        lesson_id = self.request.query_params.get('lesson_id')
+        if lesson_id:
+            return self.queryset.filter(lesson_id=lesson_id)
+        return self.queryset

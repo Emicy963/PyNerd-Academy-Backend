@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Course, Enrollment, Lesson, Module, Progress
+from .models import Course, Enrollment, Lesson, Module, Progress, Quiz, Question, Option
 
 
 class LessonSerializer(serializers.ModelSerializer):
@@ -71,3 +71,25 @@ class StudentProgressSerializer(serializers.Serializer):
     course_id = serializers.IntegerField()
     completed_lessons = serializers.IntegerField()
     total_lessons = serializers.IntegerField()
+
+
+class OptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Option
+        fields = ["id", "text", "is_correct"]
+
+
+class QuestionSerializer(serializers.ModelSerializer):
+    options = OptionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Question
+        fields = ["id", "question", "type", "points", "options"]
+
+
+class QuizSerializer(serializers.ModelSerializer):
+    questions = QuestionSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Quiz
+        fields = ["id", "lesson", "time_limit", "passing_score", "questions"]
