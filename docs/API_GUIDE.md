@@ -13,16 +13,15 @@ This guide details how to integrate the PyNerd Backend API with the frontend app
 
 **Endpoint**: `POST /api/auth/register/`
 
-The backend generates a unique `username` if not provided, but since we use `AbstractUser`, sending `username` is recommended if you have a username field.
+The backend generates a unique `username` if not provided. **Note**: Public registration always creates a user with `role="STUDENT"`.
 
 ```json
 {
-  "username": "coolnerd", // Optional (backend can generate), but recommended
+  "username": "coolnerd", // Optional (backend can generate)
   "email": "student@pynerd.com",
   "password": "strongPassword123!",
   "first_name": "John",
-  "last_name": "Doe",
-  "role": "STUDENT" // Options: STUDENT, INSTRUCTOR
+  "last_name": "Doe"
 }
 ```
 
@@ -57,11 +56,27 @@ Supports login via **Username** or **Email**. Send the value in the `username` f
 {
   "access": "eyJ0eX...",
   "refresh": "eyJ0eX...",
-  "role": "STUDENT" // Decoded from token payload if needed
+  "role": "STUDENT"
 }
 ```
 
-### 4. Social Login (Google/GitHub)
+### 4. Password Recovery
+
+**Request Reset**: `POST /api/auth/password-reset/`
+
+```json
+{ "email": "student@pynerd.com" }
+```
+
+Sends an email with a recovery link containing `{uid}` and `{token}`.
+
+**Confirm Reset**: `POST /api/auth/password-reset-confirm/{uid}/{token}/`
+
+```json
+{ "new_password": "newStrongPassword123!" }
+```
+
+### 5. Social Login (Google/GitHub)
 
 We use `drf-social-oauth2`.
 
@@ -93,10 +108,25 @@ We use `drf-social-oauth2`.
 **Response**:
 Returns a paginated list of published courses.
 
-### 2. Enrollment
+### 2. My Courses (Dashboard)
+
+**Endpoint**: `GET /api/courses/my_courses/`
+Requires `Authentication`. Returns courses the student is enrolled in.
+
+### 3. Enrollment
 
 **Endpoint**: `POST /api/courses/{id}/enroll/`
 Requires `Authentication`.
+
+### 4. Quizzes (Assessment)
+
+**Endpoint**: `GET /api/quizzes/?lesson_id={id}`
+Requires `Authentication`. Returns quizzes for a specific lesson.
+
+## 🏆 Certificates
+
+Certificates are **automatically generated** when a student completes all lessons in a course (100% progress).
+Frontend does not need to explicitly call "generate". Just check for existence or list via user profile.
 
 ## 🔄 Common Errors
 
