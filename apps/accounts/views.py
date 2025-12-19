@@ -53,14 +53,25 @@ class RegisterView(generics.CreateAPIView):
         token = default_token_generator.make_token(user)
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         activation_link = f"http://localhost:8000/api/auth/activate/{uid}/{token}/"
+        subject = "Activate your PyNerd Account"
+        message = f"Please click the link to activate: {activation_link}"
+        from_email = settings.EMAIL_HOST_USER
+        recipient_list = [user.email]
 
-        send_mail(
-            subject="Activate your PyNerd Account",
-            message=f"Please click the link to activate: {activation_link}",
-            from_email=settings.EMAIL_HOST_USER,
-            recipient_list=[user.email],
-            fail_silently=False,
-        )
+        try:
+            send_mail(
+                subject,
+                message,
+                from_email,
+                recipient_list,
+                fail_silently=False,
+            )
+        except Exception as ex:
+            user.delete() # Rollback user creation on email failure
+            return Response(
+                {"detail": "Failed to send activation email."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
         return Response(
             {"detail": "User created. Please check email for activation."},
