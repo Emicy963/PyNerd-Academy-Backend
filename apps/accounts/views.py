@@ -67,7 +67,7 @@ class RegisterView(generics.CreateAPIView):
                 fail_silently=False,
             )
         except Exception as ex:
-            user.delete() # Rollback user creation on email failure
+            user.delete()  # Rollback user creation on email failure
             return Response(
                 {"detail": "Failed to send activation email."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
