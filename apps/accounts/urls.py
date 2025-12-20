@@ -9,6 +9,7 @@ from .views import (
     SocialLoginView,
     RequestPasswordResetView,
     PasswordResetConfirmView,
+    github_callback,
 )
 
 
@@ -34,5 +35,6 @@ urlpatterns = [
         PasswordResetConfirmView.as_view(),
         name="password_reset_confirm",
     ),
+    path("auth/github/callback/", github_callback, name="github_callback"),
     path("", include(router.urls)),
 ]

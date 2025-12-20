@@ -1,6 +1,6 @@
 from rest_framework import generics, status, viewsets
 from rest_framework.response import Response
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from social_django.utils import psa
 from django.core.mail import send_mail
@@ -20,6 +20,7 @@ from .serializers import (
     PasswordResetConfirmSerializer,
 )
 from .permissions import IsSelfOrAdmin
+import requests
 
 
 class RegisterView(generics.CreateAPIView):
@@ -256,3 +257,25 @@ class PasswordResetConfirmView(generics.GenericAPIView):
         return Response(
             {"detail": "Invalid token or link."}, status=status.HTTP_400_BAD_REQUEST
         )
+
+
+# GitHub OAuth Callback View
+
+
+@api_view(["POST"])
+def github_callback(request):
+    code = request.data.get("code")
+
+    # Exchange code for access token
+    response = requests.post(
+        "https://github.com/login/oauth/access_token",
+        data={
+            "client_id": settings.GITHUB_CLIENT_ID,
+            "client_secret": settings.GITHUB_CLIENT_SECRET,
+            "code": code,
+        },
+        headers={"Accept": "application/json"},
+    )
+
+    data = response.json()
+    return Response(data)
