@@ -148,15 +148,48 @@ AUTHENTICATION_BACKENDS = (
     "django.contrib.auth.backends.ModelBackend",
 )
 
-
 # Social Auth Settings
 SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = os.getenv("GOOGLE_CLIENT_ID")
 SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
 SOCIAL_AUTH_GITHUB_KEY = os.getenv("GITHUB_CLIENT_ID")
 SOCIAL_AUTH_GITHUB_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
 
-# Define SOCIAL_AUTH_PIPELINE if needed for custom user creation logic
+# OAuth2 Settings
+SOCIAL_AUTH_REDIRECT_IS_HTTPS = False  # Use True em produção com HTTPS
+SOCIAL_AUTH_LOGIN_REDIRECT_URL = "http://localhost:5173/auth/callback"
+SOCIAL_AUTH_LOGIN_ERROR_URL = "http://localhost:5173/auth/error"
 
+SOCIAL_AUTH_GITHUB_REDIRECT_URI = "http://localhost:8000/auth/complete/github/"
+SOCIAL_AUTH_GOOGLE_OAUTH2_REDIRECT_URI = (
+    "http://localhost:8000/auth/complete/google-oauth2/"
+)
+
+# Pipeline para criação de usuários
+SOCIAL_AUTH_PIPELINE = (
+    "social_core.pipeline.social_auth.social_details",
+    "social_core.pipeline.social_auth.social_uid",
+    "social_core.pipeline.social_auth.auth_allowed",
+    "social_core.pipeline.social_auth.social_user",
+    "social_core.pipeline.user.get_username",
+    "social_core.pipeline.user.create_user",
+    "social_core.pipeline.social_auth.associate_user",
+    "social_core.pipeline.social_auth.load_extra_data",
+    "social_core.pipeline.user.user_details",
+    # Custom pipeline steps
+    "apps.accounts.pipeline.create_user_profile",
+    "apps.accounts.pipeline.generate_jwt_and_redirect",
+)
+
+# Configuração do cliente OAuth2
+SOCIAL_AUTH_GITHUB_SCOPE = ["user:email"]
+SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = ["email", "profile"]
+
+# OAuth2 Client Configuration
+OAUTH2_PROVIDER = {
+    "SCOPES": ["read", "write"],
+    "ACCESS_TOKEN_EXPIRE_SECONDS": 3600,
+    "REFRESH_TOKEN_EXPIRE_SECONDS": 3600 * 24 * 7,
+}
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
@@ -248,6 +281,7 @@ CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:3000"
 CORS_ALLOW_CREDENTIALS = True
 
 # Logging Configuration
+# settings.py - Adicione logging
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -256,9 +290,15 @@ LOGGING = {
             "class": "logging.StreamHandler",
         },
     },
-    "root": {
-        "handlers": ["console"],
-        "level": "DEBUG" if DEBUG else "INFO",
+    "loggers": {
+        "social": {
+            "handlers": ["console"],
+            "level": "DEBUG",
+        },
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+        },
     },
 }
 
