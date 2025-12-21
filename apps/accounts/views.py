@@ -2,7 +2,6 @@ from rest_framework import generics, status, viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
-from social_django.utils import psa
 from django.core.mail import send_mail
 from django.conf import settings
 from django.contrib.auth.tokens import default_token_generator
@@ -20,7 +19,6 @@ from .serializers import (
     PasswordResetConfirmSerializer,
 )
 from .permissions import IsSelfOrAdmin
-import requests
 
 
 class RegisterView(generics.CreateAPIView):
@@ -172,32 +170,20 @@ class UserViewSet(viewsets.ModelViewSet):
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-class SocialLoginView(generics.CreateAPIView):
-    """
-    View to handle social login.
-    """
-
-    permission_classes = [AllowAny]
-    serializer_class = SocialLoginSerializer
-
-    def create(self, request, *args, **kwargs):
+    @action(detail=False, methods=["get"], permission_classes=[IsAuthenticated])
+    def me(self, request):
         """
-        Handle post request for social login.
+        Return the authenticated user's profile.
         """
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        # Logic to exchange token with social provider and return JWT
-        # For simplicity, we can rely on drf-social-oauth2 ConvertTokenView
-        # but here we might want custom logic to link/create users.
-        # This is a placeholder for custom social login logic if needed beyond standard drf-social-oauth2.
-        return Response(
-            {"detail": "Use /auth/convert-token endpoint from drf-social-oauth2"},
-            status=status.HTTP_501_NOT_IMPLEMENTED,
-        )
+        serializer = self.get_serializer(request.user)
+        return Response(serializer.data)
 
 
 class RequestPasswordResetView(generics.GenericAPIView):
+    """
+    View to request a password reset email.
+    """
+
     serializer_class = RequestPasswordResetSerializer
     permission_classes = [AllowAny]
 
@@ -210,8 +196,6 @@ class RequestPasswordResetView(generics.GenericAPIView):
             user = CustomUser.objects.get(email=email)
             token = default_token_generator.make_token(user)
             uid = urlsafe_base64_encode(force_bytes(user.pk))
-            # Frontend URL for password reset (e.g., http://localhost:3000/reset-password/uid/token)
-            # For now pointing to API or a mock frontend URL
             reset_link = (
                 f"http://localhost:8000/api/auth/password-reset-confirm/{uid}/{token}/"
             )
@@ -234,6 +218,10 @@ class RequestPasswordResetView(generics.GenericAPIView):
 
 
 class PasswordResetConfirmView(generics.GenericAPIView):
+    """
+    View to confirm password reset with token.
+    """
+
     serializer_class = PasswordResetConfirmSerializer
     permission_classes = [AllowAny]
 
@@ -259,71 +247,29 @@ class PasswordResetConfirmView(generics.GenericAPIView):
         )
 
 
-# GitHub and Google OAuth Callback View
+class SocialLoginView(ConvertTokenView):
+    """
+    View to handle social login using drf-social-oauth2.
+    """
 
-@api_view(['POST'])
+    pass
+
+
+@api_view(["GET"])
 @permission_classes([AllowAny])
-def github_callback(request):
+def social_auth_success(request):
     """
-    Exchange GitHub authorization code for access token.
+    View para redirecionamento após login social bem-sucedido.
     """
-    code = request.data.get('code')
-    
-    if not code:
-        return Response(
-            {'error': 'Authorization code is required'}, 
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    
-    try:
-        # Exchange code for access token
-        response = requests.post(
-            'https://github.com/login/oauth/access_token',
-            data={
-                'client_id': settings.GITHUB_CLIENT_ID,
-                'client_secret': settings.GITHUB_CLIENT_SECRET,
-                'code': code,
-            },
-            headers={'Accept': 'application/json'}
-        )
-        
-        data = response.json()
-        
-        if 'access_token' in data:
-            return Response({
-                'access_token': data['access_token'],
-                'token_type': data.get('token_type', 'bearer'),
-                'scope': data.get('scope', '')
-            })
-        else:
-            return Response(
-                {'error': 'Failed to obtain access token', 'details': data}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-            
-    except Exception as e:
-        return Response(
-            {'error': str(e)}, 
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+    return Response({"detail": "Authentication successful"}, status=status.HTTP_200_OK)
 
 
-@api_view(['POST'])
+@api_view(["GET"])
 @permission_classes([AllowAny])
-def google_callback(request):
+def social_auth_error(request):
     """
-    Handle Google OAuth callback (optional, if needed).
+    View para redirecionamento após erro no login social.
     """
-    access_token = request.data.get('access_token')
-    
-    if not access_token:
-        return Response(
-            {'error': 'Access token is required'}, 
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    
-    # Google OAuth doesn't need code exchange since we use implicit flow
-    return Response({
-        'access_token': access_token,
-        'token_type': 'bearer'
-    })
+    return Response(
+        {"detail": "Authentication failed"}, status=status.HTTP_400_BAD_REQUEST
+    )
