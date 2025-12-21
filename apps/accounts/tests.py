@@ -123,10 +123,24 @@ class AuthTests(TestCase):
 
     def test_social_login_placeholder(self):
         """
-        Test that the custom SocialLoginView returns 501 as currently implemented.
+        Test that the SocialLoginView (extending ConvertTokenView) returns 400 for invalid requests.
         Real integration tests for Social Auth would require mocking OAuth2 provider responses.
         """
         url = "/api/auth/social-login/"
         data = {"access_token": "fake_token", "provider": "google"}
         response = self.client.post(url, data)
-        self.assertEqual(response.status_code, status.HTTP_501_NOT_IMPLEMENTED)
+        # ConvertTokenView returns 400 for invalid/incomplete OAuth requests
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_user_me_endpoint(self):
+        """Test that authenticated users can access /users/me/ to get their profile"""
+        self.client.force_authenticate(user=self.user)
+        response = self.client.get("/api/users/me/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["email"], self.user.email)
+        self.assertIn("profile", response.data)
+
+    def test_user_me_endpoint_unauthenticated(self):
+        """Test that unauthenticated users cannot access /users/me/"""
+        response = self.client.get("/api/users/me/")
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
