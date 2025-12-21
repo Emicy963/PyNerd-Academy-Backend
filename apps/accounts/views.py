@@ -1,6 +1,6 @@
 from rest_framework import generics, status, viewsets
 from rest_framework.response import Response
-from rest_framework.decorators import action, api_view
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from social_django.utils import psa
 from django.core.mail import send_mail
@@ -259,23 +259,71 @@ class PasswordResetConfirmView(generics.GenericAPIView):
         )
 
 
-# GitHub OAuth Callback View
+# GitHub and Google OAuth Callback View
 
-
-@api_view(["POST"])
+@api_view(['POST'])
+@permission_classes([AllowAny])
 def github_callback(request):
-    code = request.data.get("code")
+    """
+    Exchange GitHub authorization code for access token.
+    """
+    code = request.data.get('code')
+    
+    if not code:
+        return Response(
+            {'error': 'Authorization code is required'}, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    try:
+        # Exchange code for access token
+        response = requests.post(
+            'https://github.com/login/oauth/access_token',
+            data={
+                'client_id': settings.GITHUB_CLIENT_ID,
+                'client_secret': settings.GITHUB_CLIENT_SECRET,
+                'code': code,
+            },
+            headers={'Accept': 'application/json'}
+        )
+        
+        data = response.json()
+        
+        if 'access_token' in data:
+            return Response({
+                'access_token': data['access_token'],
+                'token_type': data.get('token_type', 'bearer'),
+                'scope': data.get('scope', '')
+            })
+        else:
+            return Response(
+                {'error': 'Failed to obtain access token', 'details': data}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+    except Exception as e:
+        return Response(
+            {'error': str(e)}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
-    # Exchange code for access token
-    response = requests.post(
-        "https://github.com/login/oauth/access_token",
-        data={
-            "client_id": settings.GITHUB_CLIENT_ID,
-            "client_secret": settings.GITHUB_CLIENT_SECRET,
-            "code": code,
-        },
-        headers={"Accept": "application/json"},
-    )
 
-    data = response.json()
-    return Response(data)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def google_callback(request):
+    """
+    Handle Google OAuth callback (optional, if needed).
+    """
+    access_token = request.data.get('access_token')
+    
+    if not access_token:
+        return Response(
+            {'error': 'Access token is required'}, 
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Google OAuth doesn't need code exchange since we use implicit flow
+    return Response({
+        'access_token': access_token,
+        'token_type': 'bearer'
+    })

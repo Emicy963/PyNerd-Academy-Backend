@@ -10,6 +10,7 @@ from .views import (
     RequestPasswordResetView,
     PasswordResetConfirmView,
     github_callback,
+    google_callback,
 )
 
 
@@ -35,6 +36,11 @@ urlpatterns = [
         PasswordResetConfirmView.as_view(),
         name="password_reset_confirm",
     ),
+
+    # OAuth Callbacks
+    
     path("auth/github/callback/", github_callback, name="github_callback"),
+    path("auth/google/callback/", google_callback, name="google_callback"),
+
     path("", include(router.urls)),
 ]
