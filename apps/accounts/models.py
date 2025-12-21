@@ -72,7 +72,7 @@ class Certificate(models.Model):
     )
     course = models.ForeignKey("courses.Course", on_delete=models.CASCADE)
     issued_at = models.DateTimeField(auto_now_add=True)
-    certificate_urls = models.URLField()
+    certificate_urls = models.URLField(blank=True, default="")
     description = models.TextField()
 
     class Meta:

@@ -10,18 +10,19 @@ from drf_spectacular.views import (
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    # Social Auth
-    path("api/auth/", include("drf_social_oauth2.urls", namespace="drf")),
-    # Apps
+    # API URLs
     path("api/", include("apps.accounts.urls")),
     path("api/", include("apps.courses.urls")),
-    # JWT
+    # JWT Authentication
     path(
         "api/auth/login/",
         TokenObtainPairView.as_view(serializer_class=CustomTokenObtainPairSerializer),
         name="token_obtain_pair",
     ),
     path("api/auth/refresh/", TokenRefreshSlidingView.as_view(), name="token_refresh"),
+    # OAuth2 URLs - INCLUÍDAS DIRETAMENTE AQUI
+    path("auth/", include("social_django.urls", namespace="social")),
+    path("auth/", include("drf_social_oauth2.urls", namespace="drf")),
     # Schema & Docs
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path(
