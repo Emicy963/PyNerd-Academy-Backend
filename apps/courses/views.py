@@ -1,9 +1,9 @@
-from django.db.models import Count
+from django.db.models import Count, Q
 from rest_framework import pagination, viewsets, status, generics
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
+from drf_spectacular.utils import extend_schema, OpenApiTypes
 from rest_framework.filters import SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Course, Enrollment, Progress, Lesson, Quiz, Category
@@ -67,8 +67,12 @@ class CourseViewSet(viewsets.ModelViewSet):
         queryset = Course.objects.select_related("instructor").prefetch_related(
             "modules__lessons"
         )
+
+        # FIX: Allow Instructors to see all published courses OR their own courses
         if user.is_authenticated and user.role == "INSTRUCTOR":
-            return queryset.filter(instructor=user)
+            # Show my courses (draft or published) + All published courses from others
+            return queryset.filter(Q(instructor=user) | Q(is_published=True)).distinct()
+
         return queryset.filter(is_published=True)
 
     def perform_create(self, serializer):
@@ -157,6 +161,7 @@ class ProgressViewSet(viewsets.ModelViewSet):
         response = super().update(request, *args, **kwargs)
 
         # Certificate Generation Logic
+        # Note: Timestamp handling is now inside models.Progress.save()
         if request.data.get("is_completed") is True:
             # Refresh to ensure we have the latest state
             instance.refresh_from_db()
