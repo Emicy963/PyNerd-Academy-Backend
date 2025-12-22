@@ -3,7 +3,15 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from rest_framework.test import APIClient
 from rest_framework import status
-from apps.courses.models import Course, Module, Lesson, Enrollment, Progress, Quiz
+from apps.courses.models import (
+    Course,
+    Module,
+    Lesson,
+    Enrollment,
+    Progress,
+    Quiz,
+    Category,
+)
 from apps.accounts.models import Certificate
 
 User = get_user_model()
@@ -121,11 +129,15 @@ class CourseAPITests(TestCase):
             is_active=True,
         )
 
+        # Create Category
+        self.category = Category.objects.create(name="Programming", slug="programming")
+
         # Create Course Data
         self.course = Course.objects.create(
             title="Python 101",
             description="Intro to Python",
             instructor=self.instructor,
+            category=self.category,
             is_published=True,
             price=0,
             duration=100,
@@ -154,7 +166,7 @@ class CourseAPITests(TestCase):
             "description": "Deep dive",
             "price": 100,
             "level": "intermediate",
-            "category": "Programming",
+            "category": self.category.id,
             "duration": 120,
             "slug": "adv-python",
         }
