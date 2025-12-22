@@ -242,7 +242,7 @@ REST_FRAMEWORK = {
 SPECTACULAR_SETTINGS = {
     "TITLE": "PyNerd API",
     "DESCRIPTION": "Backend API for PyNerd EdTech Platform",
-    "VERSION": "1.1.0",
+    "VERSION": "1.2.0",
     "SERVE_INCLUDE_SCHEMA": False,
 }
 
