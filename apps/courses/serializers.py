@@ -1,5 +1,21 @@
 from rest_framework import serializers
-from .models import Course, Enrollment, Lesson, Module, Progress, Quiz, Question, Option
+from .models import (
+    Course,
+    Enrollment,
+    Lesson,
+    Module,
+    Progress,
+    Quiz,
+    Question,
+    Option,
+    Category,
+)
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ["id", "name", "slug", "description", "icon", "color"]
 
 
 class LessonSerializer(serializers.ModelSerializer):
@@ -18,6 +34,7 @@ class ModuleSerializer(serializers.ModelSerializer):
 
 class CourseSerializer(serializers.ModelSerializer):
     modules = ModuleSerializer(many=True, read_only=True)
+    category_detail = CategorySerializer(source="category", read_only=True)
     instructor_name = serializers.CharField(
         source="instructor.get_full_name", read_only=True
     )
@@ -30,14 +47,18 @@ class CourseSerializer(serializers.ModelSerializer):
             "description",
             "instructor_name",
             "category",
+            "category_detail",
             "level",
             "price",
             "duration",
             "thumbnail",
             "slug",
             "is_published",
+            "is_featured",
             "created_at",
             "modules",
+            "students_count",
+            "is_free",
         ]
 
 

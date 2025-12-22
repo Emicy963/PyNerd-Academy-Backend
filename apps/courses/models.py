@@ -4,10 +4,40 @@ from django.core.validators import URLValidator
 from polymorphic.models import PolymorphicModel
 
 
+class Category(models.Model):
+    """
+    Model representing a course category.
+    """
+
+    name = models.CharField(max_length=100)
+    slug = models.SlugField(unique=True)
+    description = models.TextField(blank=True)
+    icon = models.CharField(max_length=50, blank=True, help_text="Lucide icon name")
+    color = models.CharField(
+        max_length=20, default="brand-green", help_text="Tailwind color class"
+    )
+    order = models.PositiveIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name_plural = "Categories"
+        ordering = ["order", "name"]
+
+    def __str__(self):
+        return self.name
+
+
 class Course(models.Model):
     """
     Model representing a course.
     """
+
+    LEVEL_CHOICES = [
+        ("beginner", "Iniciante"),
+        ("intermediate", "Intermediário"),
+        ("advanced", "Avançado"),
+    ]
 
     title = models.CharField(max_length=200)
     description = models.TextField()
@@ -20,18 +50,18 @@ class Course(models.Model):
     slug = models.SlugField(unique=True)
     thumbnail = models.URLField(blank=True)
     full_description = models.TextField(blank=True)
-    level = models.CharField(
-        max_length=20,
-        choices=[
-            ("beginner", "Beginner"),
-            ("intermediate", "Intermediate"),
-            ("advanced", "Advanced"),
-        ],
+    level = models.CharField(max_length=20, choices=LEVEL_CHOICES, default="beginner")
+    category = models.ForeignKey(
+        Category,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="courses",
     )
-    category = models.CharField(max_length=50, default="General")
     duration = models.PositiveIntegerField(help_text="Duration in minutes")
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     is_published = models.BooleanField(default=False)
+    is_featured = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     # Campos calculados
@@ -43,6 +73,10 @@ class Course(models.Model):
     @property
     def students_count(self):
         return self.enrollments.count()
+
+    @property
+    def is_free(self):
+        return self.price == 0 or self.price is None
 
     # def save(self, *args, **kwargs):
     #     if not self.slug:

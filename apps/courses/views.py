@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiTypes
 from rest_framework.filters import SearchFilter
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import Course, Enrollment, Progress, Lesson, Quiz
+from .models import Course, Enrollment, Progress, Lesson, Quiz, Category
 from apps.accounts.models import Certificate
 from .permissions import IsInstructor
 from .serializers import (
@@ -14,12 +14,20 @@ from .serializers import (
     EnrollmentSerializer,
     ProgressSerializer,
     QuizSerializer,
+    CategorySerializer,
 )
 
 
 class StandardResultSetPagination(pagination.LimitOffsetPagination):
     default_limit = 20
     max_limit = 50
+
+
+class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Category.objects.filter(is_active=True)
+    serializer_class = CategorySerializer
+    permission_classes = [AllowAny]
+    pagination_class = None
 
 
 class CourseViewSet(viewsets.ModelViewSet):
@@ -32,7 +40,13 @@ class CourseViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     pagination_class = StandardResultSetPagination
     filter_backends = [DjangoFilterBackend, SearchFilter]
-    filterset_fields = ["instructor", "is_published"]
+    filterset_fields = [
+        "instructor",
+        "is_published",
+        "category",
+        "level",
+        "is_featured",
+    ]
     search_fields = ["title", "description"]
 
     def get_permissions(self):
