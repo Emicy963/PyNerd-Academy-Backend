@@ -10,14 +10,14 @@ class Category(models.Model):
     """
 
     name = models.CharField(max_length=100)
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField(unique=True, db_index=True)  # Added index
     description = models.TextField(blank=True)
     icon = models.CharField(max_length=50, blank=True, help_text="Lucide icon name")
     color = models.CharField(
         max_length=20, default="brand-green", help_text="Tailwind color class"
     )
     order = models.PositiveIntegerField(default=0)
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True, db_index=True)  # Added index
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -47,7 +47,7 @@ class Course(models.Model):
         on_delete=models.CASCADE,
         related_name="courses",
     )
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField(unique=True, db_index=True)  # Added index
     thumbnail = models.URLField(blank=True)
     full_description = models.TextField(blank=True)
     level = models.CharField(max_length=20, choices=LEVEL_CHOICES, default="beginner")
@@ -57,18 +57,20 @@ class Course(models.Model):
         null=True,
         blank=True,
         related_name="courses",
+        db_index=True,  # Added index
     )
     duration = models.PositiveIntegerField(help_text="Duration in minutes")
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    is_published = models.BooleanField(default=False)
+    is_published = models.BooleanField(default=False, db_index=True)  # Added index
     is_featured = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     # Campos calculados
     @property
     def rating(self):
-        # Calcular rating médio das avaliações
-        pass
+        # TODO: Implement logic to calculate average from a Review model
+        # For now, return 0.0 to prevent frontend crashes
+        return 0.0
 
     @property
     def students_count(self):
@@ -77,11 +79,6 @@ class Course(models.Model):
     @property
     def is_free(self):
         return self.price == 0 or self.price is None
-
-    # def save(self, *args, **kwargs):
-    #     if not self.slug:
-    #         self.slug = slugify(self.title)
-    #     super().save(*args, **kwargs)
 
     def clean(self):
         """Ensure only instructors can create courses."""
@@ -97,7 +94,9 @@ class Module(models.Model):
     Model representing a module within a course.
     """
 
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="modules")
+    course = models.ForeignKey(
+        Course, on_delete=models.CASCADE, related_name="modules", db_index=True
+    )  # Added index
     title = models.CharField(max_length=200)
     order = models.PositiveIntegerField()
 
@@ -146,9 +145,13 @@ class Enrollment(models.Model):
         limit_choices_to={"role": "STUDENT"},
         on_delete=models.CASCADE,
         related_name="enrollments",
+        db_index=True,  # Added index
     )
     course = models.ForeignKey(
-        Course, on_delete=models.CASCADE, related_name="enrollments"
+        Course,
+        on_delete=models.CASCADE,
+        related_name="enrollments",
+        db_index=True,  # Added index
     )
     enrolled_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)
@@ -162,11 +165,15 @@ class Enrollment(models.Model):
 
 class Progress(models.Model):
     student = models.ForeignKey(
-        "accounts.CustomUser", on_delete=models.CASCADE, related_name="progress"
+        "accounts.CustomUser",
+        on_delete=models.CASCADE,
+        related_name="progress",
+        db_index=True,  # Added index
     )
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
-    is_completed = models.BooleanField(default=False)
-    completed_at = models.DateTimeField(null=True, blank=True, auto_now_add=True)
+    is_completed = models.BooleanField(default=False, db_index=True)  # Added index
+    # FIX: Removed auto_now_add=True to allow setting date on completion
+    completed_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         unique_together = ("student", "lesson")
@@ -181,6 +188,14 @@ class Progress(models.Model):
 
     def save(self, *args, **kwargs):
         self.full_clean()
+        # FIX: Handle timestamp logic manually
+        from django.utils import timezone
+
+        if self.is_completed and not self.completed_at:
+            self.completed_at = timezone.now()
+        elif not self.is_completed and self.completed_at:
+            self.completed_at = None
+
         super().save(*args, **kwargs)
 
     def __str__(self):
