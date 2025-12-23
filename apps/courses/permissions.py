@@ -17,11 +17,22 @@ class IsCourseStudent(BasePermission):
     """
 
     def has_object_permission(self, request, view, obj):
-        if hasattr(obj, "course"):
-            course = obj.course
-        elif hasattr(obj, "module") and hasattr(obj.module, "course"):
-            course = obj.module.course
-        else:
+        # Helper to get course from various object types
+        def get_course_from_obj(obj):
+            if hasattr(obj, "course"):
+                return obj.course
+            if hasattr(obj, "module") and hasattr(obj.module, "course"):
+                return obj.module.course
+            # FIX: Handle Quiz/Question relationships
+            if hasattr(obj, "quiz") and hasattr(obj.quiz, "lesson"):
+                return obj.quiz.lesson.module.course
+            if hasattr(obj, "lesson") and hasattr(obj.lesson, "module"):
+                return obj.lesson.module.course
+            return None
+
+        course = get_course_from_obj(obj)
+
+        if not course:
             return False
 
         return (
