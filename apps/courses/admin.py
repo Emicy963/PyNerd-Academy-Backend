@@ -1,9 +1,4 @@
 from django.contrib import admin
-from polymorphic.admin import (
-    PolymorphicParentModelAdmin,
-    PolymorphicChildModelAdmin,
-    PolymorphicChildModelFilter,
-)
 from .models import (
     Course,
     Module,
@@ -16,6 +11,7 @@ from .models import (
     Note,
     Resource,
     Bookmark,
+    Category,
 )
 
 
@@ -83,6 +79,7 @@ class QuizAdmin(admin.ModelAdmin):
     list_display = ("lesson", "time_limit", "passing_score")
 
 
+admin.site.register(Category)
 admin.site.register(Course, CourseAdmin)
 admin.site.register(Module, ModuleAdmin)
 admin.site.register(Lesson, LessonAdmin)
