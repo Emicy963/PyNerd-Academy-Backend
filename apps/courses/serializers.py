@@ -59,6 +59,7 @@ class CourseSerializer(serializers.ModelSerializer):
             "modules",
             "students_count",
             "is_free",
+            "rating",  # Added rating to response
         ]
 
 
@@ -95,9 +96,10 @@ class StudentProgressSerializer(serializers.Serializer):
 
 
 class OptionSerializer(serializers.ModelSerializer):
+    # FIX: Removed 'is_correct' to prevent leaking answers in the API response
     class Meta:
         model = Option
-        fields = ["id", "text", "is_correct"]
+        fields = ["id", "text"]
 
 
 class QuestionSerializer(serializers.ModelSerializer):
