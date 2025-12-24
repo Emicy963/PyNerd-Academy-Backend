@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - 2025-12-24
+
+### Added
+
+- Fixed security issue allowing students to view quiz answers.
+- Fixed Progress timestamp to reflect completion time.
+- Implemented Course.rating logic.
+- Added Category to Django Admin.
+- Fixed IsCourseStudent permission logic.
+- Updated CourseViewSet to allow instructors to view published courses.
+
 ## [1.2.1] - 2025-12-22
 
 ### Added
