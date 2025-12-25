@@ -83,7 +83,7 @@ class AuthTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         user = User.objects.get(email="hacker@example.com")
         self.assertEqual(user.role, "STUDENT")
-        self.assertTrue(user.is_active)
+        self.assertFalse(user.is_active)
 
     def test_password_reset_flow(self):
         """Test the full password reset flow"""

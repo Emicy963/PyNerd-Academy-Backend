@@ -14,7 +14,6 @@ from .serializers import (
     UserDetailSerializer,
     UserSerializer,
     ChangePasswordSerializer,
-    SocialLoginSerializer,
     RequestPasswordResetSerializer,
     PasswordResetConfirmSerializer,
 )
@@ -42,7 +41,7 @@ class RegisterView(generics.CreateAPIView):
             password=serializer.validated_data["password"],
             role=role,
             is_approved=is_approved,
-            is_active=True,
+            is_active=False,
         )
 
         # Create profile
@@ -83,7 +82,7 @@ class RegisterView(generics.CreateAPIView):
         OpenApiParameter("uidb64", OpenApiTypes.STR, location=OpenApiParameter.PATH),
         OpenApiParameter("token", OpenApiTypes.STR, location=OpenApiParameter.PATH),
     ],
-    responses={200: None},  # No response body
+    responses={200: None},
 )
 class ActivateAccountView(generics.GenericAPIView):
     """
@@ -91,7 +90,7 @@ class ActivateAccountView(generics.GenericAPIView):
     """
 
     permission_classes = [AllowAny]
-    serializer_class = None  # Explicitly set to None to avoid auto-generation warnings
+    serializer_class = None
 
     def get(self, request, uidb64, token):
         """
