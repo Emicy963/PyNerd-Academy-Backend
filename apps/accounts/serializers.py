@@ -62,7 +62,7 @@ class UserSerializer(serializers.ModelSerializer):
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
-        fields = ["bio", "avatar", "website", "location", "birth_date"]
+        fields = ["bio", "website", "location", "birth_date"]
         read_only_fields = ["created_at", "updated_at"]
 
 
@@ -80,7 +80,7 @@ class CertificateSerializer(serializers.ModelSerializer):
             "course_title",
             "instructor_name",
             "issued_at",
-            "certificate_urls",
+            "certificate_url",
             "description",
         ]
 
@@ -99,6 +99,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
             "role",
             "is_approved",
             "date_joined",
+            "avatar",
             "profile",
             "certificates",
         ]

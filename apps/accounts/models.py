@@ -16,7 +16,7 @@ class CustomUser(AbstractUser):
         ("enterprise", "Enterprise"),
     )
 
-    email = models.EmailField(unique=True)
+    email = models.EmailField(unique=True, db_index=True)
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default="STUDENT")
     avatar = models.URLField(blank=True)
     plan = models.CharField(max_length=20, choices=PLAN_CHOICES, default="free")
@@ -51,7 +51,6 @@ class UserProfile(models.Model):
         CustomUser, on_delete=models.CASCADE, related_name="profile"
     )
     bio = models.TextField(blank=True)
-    avatar = models.URLField(blank=True)
     website = models.URLField(blank=True)
     location = models.CharField(max_length=100, blank=True)
     birth_date = models.DateField(null=True, blank=True)
@@ -72,8 +71,8 @@ class Certificate(models.Model):
     )
     course = models.ForeignKey("courses.Course", on_delete=models.CASCADE)
     issued_at = models.DateTimeField(auto_now_add=True)
-    certificate_urls = models.URLField(blank=True, default="")
-    description = models.TextField()
+    certificate_url = models.URLField(blank=True, default="")
+    description = models.TextField(blank=True, default="")
 
     class Meta:
         unique_together = ("student", "course")
