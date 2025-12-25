@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.3] - 2025-12-26
+
+### Added
+
+**Fixed:**
+
+- **Registration Logic:** Fixed a critical bug where newly registered users could log in immediately without verifying their email. Users now start as is_active=False and must click the link to activate their account.
+- **User Model Redundancy:** Fixed data inconsistency by removing the duplicate avatar field from UserProfile. avatar is now the single source of truth on CustomUser.
+- **Certificate Model:** Corrected the Certificate model structure. Renamed certificate_urls to certificate_url (singular) to match the field type (URLField), and made description optional (blank=True) to prevent errors during auto-generation.
+- **Admin Interface:** Removed study_streak and total_study_time from the "Add User" admin fieldsets, as these have defaults and do not require manual input during creation.
+
+**Security:**
+
+- **Social Auth Token Leak:** Changed the JWT token transmission method in the Social Auth pipeline. Tokens are now passed via URL Fragments (#) instead of Query Parameters (?). This prevents tokens from being logged in server access logs or stored in browser history.
+
 ## [1.2.2] - 2025-12-24
 
 ### Added

@@ -1,6 +1,6 @@
 [project]
 name = "PyNerd_-_Backend"
-version = "1.2.2"
+version = "1.2.3"
 description = "PyNerd is a robust EdTech platform designed for the Angolan and PALOP markets, focusing on providing high-quality technical education. This repository contains the MVP implementation of the backend API."
 readme = "README.md"
 requires-python = ">=3.13"
