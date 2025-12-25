@@ -27,7 +27,9 @@ def generate_jwt_and_redirect(backend, user, response, *args, **kwargs):
 
     This is the final step in the pipeline that:
     1. Generates access and refresh JWT tokens for the user
-    2. Redirects to the frontend callback URL with tokens as query params
+    2. Redirects to the frontend callback URL with tokens as URL FRAGMENTS
+       (e.g. http://app.com/#access=xxx&refresh=yyy)
+       Using fragments is more secure than query params as tokens are not sent to the server.
     """
     if user:
         refresh = RefreshToken.for_user(user)
@@ -43,5 +45,6 @@ def generate_jwt_and_redirect(backend, user, response, *args, **kwargs):
             "http://localhost:5173/auth/callback",
         )
 
-        redirect_url = f"{frontend_url}?{urlencode(tokens)}"
+        fragment = urlencode(tokens)
+        redirect_url = f"{frontend_url}#{fragment}"
         return redirect(redirect_url)
